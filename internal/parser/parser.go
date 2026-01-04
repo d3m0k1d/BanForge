@@ -2,7 +2,7 @@ package parser
 
 import (
 	"bufio"
-	"github.com/d3m0k1d/BanForge/local/logger"
+	"github.com/d3m0k1d/BanForge/internal/logger"
 	"os"
 )
 
