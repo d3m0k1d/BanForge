@@ -54,7 +54,7 @@ func (s *Scanner) Start() {
 					}
 				} else {
 					if err := s.scanner.Err(); err != nil {
-						s.logger.Error("Scanner error:", err)
+						s.logger.Error("Scanner error")
 						return
 					}
 					time.Sleep(s.pollDelay)
