@@ -20,5 +20,7 @@ jobs:
           cache: false
       - name: Install deps
         run: go mod tidy
+      - name: Run tests
+        run: go test ./...
       - name: Build
         run: go build -o BanForge ./cmd/banforge
