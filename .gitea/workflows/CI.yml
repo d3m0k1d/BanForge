@@ -17,5 +17,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.25'
+          cache: false
+      - name: Install deps
+        run: go mod tidy
       - name: Build
-        run: go build -o BanForge /cmd/banforge
+        run: go build -o BanForge ./cmd/banforge
