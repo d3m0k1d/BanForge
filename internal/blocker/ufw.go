@@ -16,13 +16,25 @@ func NewUfw(logger *logger.Logger) *Ufw {
 }
 
 func (ufw *Ufw) Ban(ip string) error {
+	validateIP(ip)
 	cmd := exec.Command("sudo", "ufw", "--force", "deny", "from", ip)
-	ufw.logger.Info("Banning " + ip)
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		ufw.logger.Error(err.Error())
+		return err
+	}
+	ufw.logger.Info("Banning " + ip + " " + string(output))
+	return nil
 }
 
 func (ufw *Ufw) Unban(ip string) error {
+	validateIP(ip)
 	cmd := exec.Command("sudo", "ufw", "--force", "delete", "deny", "from", ip)
-	ufw.logger.Info("Unbanning " + ip)
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		ufw.logger.Error(err.Error())
+		return err
+	}
+	ufw.logger.Info("Unbanning " + ip + " " + string(output))
+	return nil
 }
