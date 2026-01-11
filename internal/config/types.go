@@ -1,8 +1,8 @@
 package config
 
 type Firewall struct {
-	Name     string `toml:"name"`
-	Ban_time int    `toml:ban_time`
+	Name    string `toml:"name"`
+	BanTime int    `toml:"ban_time"`
 }
 
 type Service struct {

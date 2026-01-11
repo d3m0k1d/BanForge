@@ -24,4 +24,3 @@ func New(debug bool) *Logger {
 		Logger: slog.New(handler),
 	}
 }
-

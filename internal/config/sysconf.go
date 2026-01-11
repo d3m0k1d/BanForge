@@ -19,10 +19,6 @@ func CreateConf() error {
 		return fmt.Errorf("you must be root to run this command, use sudo/doas")
 	}
 
-	if err := os.MkdirAll(ConfigDir, 0755); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
 	configPath := filepath.Join(ConfigDir, ConfigFile)
 
 	if _, err := os.Stat(configPath); err == nil {
@@ -30,13 +26,17 @@ func CreateConf() error {
 		return nil
 	}
 
-	file, err := os.Create(configPath)
+	file, err := os.Create("/etc/banforge/config.toml")
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %w", err)
 	}
-	defer file.Close()
-
-	if err := os.Chmod(configPath, 0644); err != nil {
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	if err := os.Chmod(configPath, 0600); err != nil {
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 

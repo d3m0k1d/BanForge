@@ -1,8 +1,9 @@
 package blocker
 
 import (
-	"github.com/d3m0k1d/BanForge/internal/logger"
 	"os/exec"
+
+	"github.com/d3m0k1d/BanForge/internal/logger"
 )
 
 type Ufw struct {
@@ -16,7 +17,10 @@ func NewUfw(logger *logger.Logger) *Ufw {
 }
 
 func (ufw *Ufw) Ban(ip string) error {
-	validateIP(ip)
+	err := validateIP(ip)
+	if err != nil {
+		return err
+	}
 	cmd := exec.Command("sudo", "ufw", "--force", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -28,7 +32,10 @@ func (ufw *Ufw) Ban(ip string) error {
 }
 
 func (ufw *Ufw) Unban(ip string) error {
-	validateIP(ip)
+	err := validateIP(ip)
+	if err != nil {
+		return err
+	}
 	cmd := exec.Command("sudo", "ufw", "--force", "delete", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

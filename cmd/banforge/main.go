@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
@@ -19,8 +20,16 @@ var initCmd = &cobra.Command{
 	Short: "Initialize BanForge",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Initializing BanForge...")
-		os.Mkdir("/var/log/banforge", 0755)
-		os.Mkdir("/etc/banforge", 0755)
+		err := os.Mkdir("/var/log/banforge", 0750)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = os.Mkdir("/etc/banforge", 0750)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 

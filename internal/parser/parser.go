@@ -22,7 +22,7 @@ type Scanner struct {
 }
 
 func NewScanner(path string) (*Scanner, error) {
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 -- admin tool, runs as root, path controlled by operator
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,10 @@ func (s *Scanner) Start() {
 func (s *Scanner) Stop() {
 	close(s.stopCh)
 	time.Sleep(150 * time.Millisecond)
-	s.file.Close()
+	err := s.file.Close()
+	if err != nil {
+		s.logger.Error("Failed to close file")
+	}
 	close(s.ch)
 }
 
