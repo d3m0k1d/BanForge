@@ -20,6 +20,8 @@ jobs:
           cache: false
       - name: Install deps
         run: go mod tidy
+      - name: Run linter
+        run: golangci-lint run ./...
       - name: Run tests
         run: go test ./...
       - name: Build
