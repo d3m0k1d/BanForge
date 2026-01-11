@@ -2,6 +2,7 @@ package config
 
 type Firewall struct {
 	Name    string `toml:"name"`
+	Config  string `toml:"config"`
 	BanTime int    `toml:"ban_time"`
 }
 
