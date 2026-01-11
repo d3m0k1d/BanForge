@@ -14,11 +14,22 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize BanForge",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Initializing BanForge...")
+		os.Mkdir("/var/log/banforge", 0755)
+		os.Mkdir("/etc/banforge", 0755)
+	},
+}
+
 func Init() {
 
 }
 
 func Execute() {
+	rootCmd.AddCommand(initCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
