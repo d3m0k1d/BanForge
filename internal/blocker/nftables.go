@@ -20,6 +20,139 @@ func NewNftables(logger *logger.Logger, config string) *Nftables {
 	}
 }
 
+// Name returns the blocker engine name
+func (n *Nftables) Name() string {
+	return "nftables"
+}
+
+// IsAvailable checks if nftables is available in the system
+func (n *Nftables) IsAvailable() bool {
+	cmd := exec.Command("which", "nft")
+	return cmd.Run() == nil
+}
+
+// Setup initializes nftables with required tables and chains
+func (n *Nftables) Setup() error {
+	return SetupNftables(n.config)
+}
+
+// Ban adds an IP to the banned list
+func (n *Nftables) Ban(ip string) error {
+	err := validateIP(ip)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("sudo", "nft", "add", "rule", "inet", "banforge", "banned",
+		"ip", "saddr", ip, "drop")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		n.logger.Error("failed to ban IP",
+			"ip", ip,
+			"error", err.Error(),
+			"output", string(output))
+		return err
+	}
+
+	n.logger.Info("IP banned", "ip", ip)
+
+	err = saveNftablesConfig(n.config)
+	if err != nil {
+		n.logger.Error("failed to save config",
+			"config_path", n.config,
+			"error", err.Error())
+		return err
+	}
+
+	n.logger.Info("config saved", "config_path", n.config)
+	return nil
+}
+
+// Unban removes an IP from the banned list
+func (n *Nftables) Unban(ip string) error {
+	err := validateIP(ip)
+	if err != nil {
+		return err
+	}
+
+	handle, err := n.findRuleHandle(ip)
+	if err != nil {
+		n.logger.Error("failed to find rule handle",
+			"ip", ip,
+			"error", err.Error())
+		return err
+	}
+
+	if handle == "" {
+		n.logger.Warn("no rule found for IP", "ip", ip)
+		return fmt.Errorf("no rule found for IP %s", ip)
+	}
+	// #nosec G204 - handle is extracted from nftables output and validated
+	cmd := exec.Command("sudo", "nft", "delete", "rule", "inet", "banforge", "banned",
+		"handle", handle)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		n.logger.Error("failed to unban IP",
+			"ip", ip,
+			"handle", handle,
+			"error", err.Error(),
+			"output", string(output))
+		return err
+	}
+
+	n.logger.Info("IP unbanned", "ip", ip, "handle", handle)
+
+	err = saveNftablesConfig(n.config)
+	if err != nil {
+		n.logger.Error("failed to save config",
+			"config_path", n.config,
+			"error", err.Error())
+		return err
+	}
+
+	n.logger.Info("config saved", "config_path", n.config)
+	return nil
+}
+
+// List returns all currently banned IPs
+func (n *Nftables) List() ([]string, error) {
+	cmd := exec.Command("sudo", "nft", "-a", "list", "chain", "inet", "banforge", "banned")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		n.logger.Error("failed to list banned IPs",
+			"error", err.Error(),
+			"output", string(output))
+		return nil, err
+	}
+
+	var bannedIPs []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "drop") && strings.Contains(line, "saddr") {
+			// Extract IP from line like: ip saddr 10.0.0.1 drop # handle 2
+			parts := strings.Fields(line)
+			for i, part := range parts {
+				if part == "saddr" && i+1 < len(parts) {
+					ip := parts[i+1]
+					if validateIP(ip) == nil {
+						bannedIPs = append(bannedIPs, ip)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return bannedIPs, nil
+}
+
+// Close performs cleanup operations (placeholder for future use)
+func (n *Nftables) Close() error {
+	// No cleanup needed for nftables
+	n.logger.Info("nftables blocker closed")
+	return nil
+}
+
 func SetupNftables(config string) error {
 	err := validateConfigPath(config)
 	if err != nil {
@@ -69,82 +202,6 @@ func SetupNftables(config string) error {
 		return fmt.Errorf("failed to save nftables config: %w", err)
 	}
 
-	return nil
-}
-
-func (n *Nftables) Ban(ip string) error {
-	err := validateIP(ip)
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("sudo", "nft", "add", "rule", "inet", "banforge", "banned",
-		"ip", "saddr", ip, "drop")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		n.logger.Error("failed to ban IP",
-			"ip", ip,
-			"error", err.Error(),
-			"output", string(output))
-		return err
-	}
-
-	n.logger.Info("IP banned", "ip", ip)
-
-	err = saveNftablesConfig(n.config)
-	if err != nil {
-		n.logger.Error("failed to save config",
-			"config_path", n.config,
-			"error", err.Error())
-		return err
-	}
-
-	n.logger.Info("config saved", "config_path", n.config)
-	return nil
-}
-
-func (n *Nftables) Unban(ip string) error {
-	err := validateIP(ip)
-	if err != nil {
-		return err
-	}
-
-	handle, err := n.findRuleHandle(ip)
-	if err != nil {
-		n.logger.Error("failed to find rule handle",
-			"ip", ip,
-			"error", err.Error())
-		return err
-	}
-
-	if handle == "" {
-		n.logger.Warn("no rule found for IP", "ip", ip)
-		return fmt.Errorf("no rule found for IP %s", ip)
-	}
-	// #nosec G204 - handle is extracted from nftables output and validated
-	cmd := exec.Command("sudo", "nft", "delete", "rule", "inet", "banforge", "banned",
-		"handle", handle)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		n.logger.Error("failed to unban IP",
-			"ip", ip,
-			"handle", handle,
-			"error", err.Error(),
-			"output", string(output))
-		return err
-	}
-
-	n.logger.Info("IP unbanned", "ip", ip, "handle", handle)
-
-	err = saveNftablesConfig(n.config)
-	if err != nil {
-		n.logger.Error("failed to save config",
-			"config_path", n.config,
-			"error", err.Error())
-		return err
-	}
-
-	n.logger.Info("config saved", "config_path", n.config)
 	return nil
 }
 
