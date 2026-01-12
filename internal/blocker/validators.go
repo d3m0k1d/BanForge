@@ -1,8 +1,11 @@
 package blocker
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"path/filepath"
+	"strings"
 )
 
 func validateIP(ip string) error {
@@ -17,10 +20,20 @@ func validateIP(ip string) error {
 	return nil
 }
 
-func validateConfigPath(path string) error {
-	if path == "" {
-		return fmt.Errorf("empty path")
+func validateConfigPath(pathIn string) error {
+	if pathIn == "" {
+		return errors.New("config path cannot be empty")
 	}
+
+	cleanPath := filepath.Clean(pathIn)
+
+	if !filepath.IsAbs(cleanPath) {
+		return fmt.Errorf("config path must be absolute, got: %s", cleanPath)
+	}
+
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("config path contains path traversal: %s", cleanPath)
+	}
+
 	return nil
-	// TODO: add more valodation
 }
