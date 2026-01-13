@@ -40,3 +40,12 @@ func (d *DB) CreateTable() error {
 	d.logger.Info("Created tables")
 	return nil
 }
+
+func (d *DB) SearchUnViewed() (*sql.Rows, error) {
+	rows, err := d.db.Query("SELECT id, service, ip, path, status, method, viewed, created_at FROM requests WHERE viewed = 0")
+	if err != nil {
+		d.logger.Error("Failed to query database")
+		return nil, err
+	}
+	return rows, nil
+}
