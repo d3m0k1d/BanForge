@@ -46,6 +46,20 @@ func CreateConf() error {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 	fmt.Printf(" Config file created: %s\n", configPath)
+	file, err = os.Create("/etc/banforge/rules.toml")
+	if err != nil {
+		return fmt.Errorf("failed to create rules file: %w", err)
+	}
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	if err := os.Chmod(configPath, 0600); err != nil {
+		return fmt.Errorf("failed to set permissions: %w", err)
+	}
+	fmt.Printf(" Rules file created: %s\n", configPath)
 	return nil
 }
 
