@@ -49,3 +49,12 @@ func (d *DB) SearchUnViewed() (*sql.Rows, error) {
 	}
 	return rows, nil
 }
+
+func (d *DB) MarkAsViewed(id int) error {
+	_, err := d.db.Exec("UPDATE requests SET viewed = 1 WHERE id = ?", id)
+	if err != nil {
+		d.logger.Error("Failed to mark as viewed", "error", err)
+		return err
+	}
+	return nil
+}

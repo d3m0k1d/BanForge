@@ -12,7 +12,7 @@ import (
 type Judge struct {
 	db             *storage.DB
 	logger         *logger.Logger
-	Blocker        *blocker.BlockerEngine
+	Blocker        blocker.BlockerEngine
 	rulesByService map[string][]config.Rule
 }
 
@@ -35,11 +35,11 @@ func (j *Judge) LoadRules(rules []config.Rule) {
 	j.logger.Info("Rules loaded and indexed by service")
 }
 
-func (j *Judge) ProcessUnviewed() ([]storage.LogEntry, error) {
+func (j *Judge) ProcessUnviewed() error {
 	rows, err := j.db.SearchUnViewed()
 	if err != nil {
 		j.logger.Error(fmt.Sprintf("Failed to query database: %v", err))
-		return nil, err
+		return err
 	}
 	defer func() {
 		err = rows.Close()
@@ -48,8 +48,6 @@ func (j *Judge) ProcessUnviewed() ([]storage.LogEntry, error) {
 		}
 	}()
 
-	var entries []storage.LogEntry
-
 	for rows.Next() {
 		var entry storage.LogEntry
 		err = rows.Scan(&entry.ID, &entry.Service, &entry.IP, &entry.Path, &entry.Status, &entry.Method, &entry.IsViewed, &entry.CreatedAt)
@@ -57,13 +55,34 @@ func (j *Judge) ProcessUnviewed() ([]storage.LogEntry, error) {
 			j.logger.Error(fmt.Sprintf("Failed to scan database row: %v", err))
 			continue
 		}
-		entries = append(entries, entry)
+
+		rules, serviceExists := j.rulesByService[entry.Service]
+		if serviceExists {
+			for _, rule := range rules {
+				if (rule.Method == "" || entry.Method == rule.Method) &&
+					(rule.Status == "" || entry.Status == rule.Status) &&
+					(rule.Path == "" || entry.Path == rule.Path) {
+
+					j.logger.Info(fmt.Sprintf("Rule matched for IP: %s, Service: %s", entry.IP, entry.Service))
+					j.Blocker.Ban(entry.IP)
+					j.logger.Info(fmt.Sprintf("IP banned: %s", entry.IP))
+					break
+				}
+			}
+		}
+
+		err = j.db.MarkAsViewed(entry.ID)
+		if err != nil {
+			j.logger.Error(fmt.Sprintf("Failed to mark entry as viewed: %v", err))
+		} else {
+			j.logger.Info(fmt.Sprintf("Entry marked as viewed: ID=%d", entry.ID))
+		}
 	}
 
 	if err = rows.Err(); err != nil {
 		j.logger.Error(fmt.Sprintf("Error iterating rows: %v", err))
-		return nil, err
+		return err
 	}
 
-	return entries, nil
+	return nil
 }

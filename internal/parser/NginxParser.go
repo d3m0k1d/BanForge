@@ -35,11 +35,12 @@ func (p *NginxParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogEn
 			method := matches[3]
 
 			resultCh <- &storage.LogEntry{
-				Service: "nginx",
-				IP:      matches[1],
-				Path:    &path,
-				Status:  &status,
-				Method:  &method,
+				Service:  "nginx",
+				IP:       matches[1],
+				Path:     path,
+				Status:   status,
+				Method:   method,
+				IsViewed: false,
 			}
 		}
 	}()
