@@ -99,31 +99,47 @@ func (n *Nftables) Unban(ip string) error {
 func SetupNftables(config string) error {
 	err := validateConfigPath(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("path error: %w", err)
 	}
 
-	cmd := exec.Command("sudo", "nft", "list", "table", "inet", "banforge")
-	if err := cmd.Run(); err != nil {
-		cmd = exec.Command("sudo", "nft", "add", "table", "inet", "banforge")
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("failed to create table: %s", string(output))
-		}
+	nftConfig := `table inet banforge {
+	chain input {
+		type filter hook input priority 0
+		policy accept
 	}
 
-	cmd = exec.Command("sudo", "nft", "list", "chain", "inet", "banforge", "input")
-	if err := cmd.Run(); err != nil {
-		script := "sudo nft 'add chain inet banforge input { type filter hook input priority 0; policy accept; }'"
-		cmd = exec.Command("bash", "-c", script)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("failed to create input chain: %s", string(output))
-		}
+	chain banned {
 	}
+}
+`
 
-	err = saveNftablesConfig(config)
+	cmd := exec.Command("sudo", "tee", config)
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return fmt.Errorf("failed to save nftables config: %w", err)
+		return fmt.Errorf("failed to create stdin pipe: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start tee command: %w", err)
+	}
+
+	_, err = stdin.Write([]byte(nftConfig))
+	if err != nil {
+		return fmt.Errorf("failed to write config: %w", err)
+	}
+	err = stdin.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close stdin pipe: %w", err)
+	}
+
+	if err = cmd.Wait(); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+
+	cmd = exec.Command("sudo", "nft", "-f", config)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to load nftables config: %s", string(output))
 	}
 
 	return nil
