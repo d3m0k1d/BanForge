@@ -12,10 +12,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v6
-
       - name: Create Release
         env:
           TOKEN: ${{ secrets.TOKEN }}
@@ -23,7 +21,6 @@ jobs:
           TAG="${{ gitea.ref_name }}"
           REPO="${{ gitea.repository }}"
           SERVER="${{ gitea.server_url }}"
-          
           curl -X POST \
             -H "Authorization: token $TOKEN" \
             -H "Content-Type: application/json" \
@@ -45,25 +42,26 @@ jobs:
             arch: amd64
           - goos: linux
             arch: arm64
-
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-go@v6
         with:
           go-version: '1.25'
           cache: false
-
       - run: go mod tidy
-
       - run: go test ./...
-
       - name: Build ${{ matrix.goos }}-${{ matrix.arch }}
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.arch }}
         run: go build -o banforge-${{ matrix.goos }}-${{ matrix.arch }} ./cmd/banforge
-
-
+      - name: Upload ${{ matrix.goos }}-${{ matrix.arch }}
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          TAG="${{ gitea.ref_name }}"
+          FILE="banforge-${{ matrix.goos }}-${{ matrix.arch }}"
+          curl --user d3m0k1d:$TOKEN \
+            --upload-file $FILE \
+            https://gitea.d3m0k1d.ru/api/packages/d3m0k1d/generic/banforge/$TAG/$FILE
