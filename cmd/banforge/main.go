@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 )
 
 var (
+	ip      string
 	name    string
 	service string
 	path    string
@@ -136,19 +138,7 @@ var daemonCmd = &cobra.Command{
 		}
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name
-		switch fw {
-		case "ufw":
-			b = blocker.NewUfw(log)
-		case "iptables":
-			b = blocker.NewIptables(log, cfg.Firewall.Config)
-		case "nftables":
-			b = blocker.NewNftables(log, cfg.Firewall.Config)
-		case "firewalld":
-			b = blocker.NewFirewalld(log)
-		default:
-			log.Error("Unknown firewall", "firewall", fw)
-			os.Exit(1)
-		}
+		b = blocker.GetBlocker(fw, cfg.Firewall.Config)
 		r, err := config.LoadRuleConfig()
 		if err != nil {
 			log.Error("Failed to load rules", "error", err)
@@ -201,6 +191,72 @@ var daemonCmd = &cobra.Command{
 	},
 }
 
+var UnbanCmd = &cobra.Command{
+	Use:   "unban",
+	Short: "Unban IP",
+	Run: func(cmd *cobra.Command, args []string) {
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fw := cfg.Firewall.Name
+		b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		if ip == "" {
+			fmt.Println("IP can't be empty")
+			os.Exit(1)
+		}
+		if net.ParseIP(ip) == nil {
+			fmt.Println("Invalid IP")
+			os.Exit(1)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = b.Unban(ip)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("IP unblocked successfully!")
+	},
+}
+
+var BanCmd = &cobra.Command{
+	Use:   "ban",
+	Short: "Ban IP",
+	Run: func(cmd *cobra.Command, args []string) {
+
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fw := cfg.Firewall.Name
+		b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		if ip == "" {
+			fmt.Println("IP can't be empty")
+			os.Exit(1)
+		}
+		if net.ParseIP(ip) == nil {
+			fmt.Println("Invalid IP")
+			os.Exit(1)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = b.Ban(ip)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("IP unblocked successfully!")
+	},
+}
+
+// Rule block
 var ruleCmd = &cobra.Command{
 	Use:   "rule",
 	Short: "Manage rules",
@@ -251,6 +307,10 @@ func Execute() {
 	rootCmd.AddCommand(daemonCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(ruleCmd)
+	rootCmd.AddCommand(BanCmd)
+	rootCmd.AddCommand(UnbanCmd)
+	UnbanCmd.Flags().StringVarP(&ip, "ip", "i", "", "ip to unban")
+	BanCmd.Flags().StringVarP(&ip, "ip", "i", "", "ip to ban")
 	// Rule comand block
 	ruleCmd.AddCommand(addCmd)
 	ruleCmd.AddCommand(listCmd)
