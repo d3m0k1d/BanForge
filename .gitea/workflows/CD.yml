@@ -66,8 +66,4 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         run: go build -o banforge-${{ matrix.goos }}-${{ matrix.arch }} ./cmd/banforge
 
-      - name: Upload ${{ matrix.goos }}-${{ matrix.arch }}
-        uses: actions@upload-artifact@v2
-        with:
-          name: banforge-${{ matrix.goos }}-${{ matrix.arch }}
-          path: banforge-${{ matrix.goos }}-${{ matrix.arch }}
+
