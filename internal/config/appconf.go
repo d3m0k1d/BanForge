@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/BurntSushi/toml"
 	"github.com/d3m0k1d/BanForge/internal/logger"
@@ -19,4 +20,87 @@ func LoadRuleConfig() ([]Rule, error) {
 
 	log.Info(fmt.Sprintf("loaded %d rules", len(cfg.Rules)))
 	return cfg.Rules, nil
+}
+
+func NewRule(Name string, ServiceName string, Path string, Status string, Method string) error {
+	r, err := LoadRuleConfig()
+	if err != nil {
+		r = []Rule{}
+	}
+	if Name == "" {
+		fmt.Printf("Rule name can't be empty\n")
+		return nil
+	}
+	r = append(r, Rule{Name: Name, ServiceName: ServiceName, Path: Path, Status: Status, Method: Method})
+	file, err := os.Create("/etc/banforge/rules.toml")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	cfg := Rules{Rules: r}
+
+	err = toml.NewEncoder(file).Encode(cfg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func EditRule(Name string, ServiceName string, Path string, Status string, Method string) error {
+	if Name == "" {
+		return fmt.Errorf("Rule name can't be empty")
+	}
+
+	r, err := LoadRuleConfig()
+	if err != nil {
+		return fmt.Errorf("rules is empty, please use 'banforge add rule' or create rules.toml")
+	}
+
+	found := false
+	for i, rule := range r {
+		if rule.Name == Name {
+			found = true
+
+			if ServiceName != "" {
+				r[i].ServiceName = ServiceName
+			}
+			if Path != "" {
+				r[i].Path = Path
+			}
+			if Status != "" {
+				r[i].Status = Status
+			}
+			if Method != "" {
+				r[i].Method = Method
+			}
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("rule '%s' not found", Name)
+	}
+
+	file, err := os.Create("/etc/banforge/rules.toml")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	cfg := Rules{Rules: r}
+	if err := toml.NewEncoder(file).Encode(cfg); err != nil {
+		return fmt.Errorf("failed to encode config: %w", err)
+	}
+
+	return nil
 }

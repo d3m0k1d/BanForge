@@ -14,6 +14,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	name    string
+	service string
+	path    string
+	status  string
+	method  string
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "banforge",
 	Short: "IPS log-based written on Golang",
@@ -193,6 +201,48 @@ var daemonCmd = &cobra.Command{
 	},
 }
 
+var ruleCmd = &cobra.Command{
+	Use:   "rule",
+	Short: "Manage rules",
+}
+
+var addCmd = &cobra.Command{
+	Use:   "add",
+	Short: "CLI interface for add new rule to file /etc/banforge/rules.toml",
+	Run: func(cmd *cobra.Command, args []string) {
+		if name == "" {
+			fmt.Printf("Rule name can't be empty\n")
+			os.Exit(1)
+		}
+		if service == "" && path == "" && status == "" && method == "" {
+			fmt.Printf("At least 1 rule field must be filled in.")
+			os.Exit(1)
+		}
+
+		err := config.NewRule(name, service, path, status, method)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("Rule added successfully!")
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List rules",
+	Run: func(cmd *cobra.Command, args []string) {
+		r, err := config.LoadRuleConfig()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		for _, rule := range r {
+			fmt.Printf("Name: %s\nService: %s\nPath: %s\nStatus: %s\nMethod: %s\n\n", rule.Name, rule.ServiceName, rule.Path, rule.Status, rule.Method)
+		}
+	},
+}
+
 func Init() {
 
 }
@@ -200,6 +250,15 @@ func Init() {
 func Execute() {
 	rootCmd.AddCommand(daemonCmd)
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(ruleCmd)
+	// Rule comand block
+	ruleCmd.AddCommand(addCmd)
+	ruleCmd.AddCommand(listCmd)
+	addCmd.Flags().StringVarP(&name, "name", "n", "", "rule name (required)")
+	addCmd.Flags().StringVarP(&service, "service", "s", "", "service name")
+	addCmd.Flags().StringVarP(&path, "path", "p", "", "request path")
+	addCmd.Flags().StringVarP(&status, "status", "c", "", "HTTP status code")
+	addCmd.Flags().StringVarP(&method, "method", "m", "", "HTTP method")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
