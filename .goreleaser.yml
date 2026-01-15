@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+project_name: BanForge
+
+builds:
+  - id: banforge
+    main: ./cmd/banforge/main.go
+    binary: banforge-{{ .Version }}-{{ .Os }}-{{ .Arch }}
+    ignore:
+      - goos: windows
+      - goos: darwin
+      - goos: freebsd
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - "-s -w" 
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+nfpms:
+  - id: banforge
+    package_name: banforge
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    homepage: https://gitea.d3m0k1d.ru/d3m0k1d/BanForge
+    description: BanForge IPS log-based system
+    maintainer: d3m0k1d <contact@d3m0k1d.ru>
+    license: GPLv3.0
+    formats:
+      - apk
+      - deb
+      - rpm
+      - archlinux
+    bindir: /usr/bin
+
+release: 
+  gitea:
+    owner: d3m0k1d
+    name: BanForge
+  mode: keep-existing
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+signs:
+  - cmd: gpg
+    args:
+      - "--batch"
+      - "--no-tty"
+      - "--pinentry-mode"
+      - "loopback"
+      - "-u"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+    stdin: "{{ .Env.GPG_PASSWORD }}"
+    artifacts: checksum
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.spdx.json"
+    cmd: syft
+    args: ["$artifact", "--output", "spdx-json=$document"]
+

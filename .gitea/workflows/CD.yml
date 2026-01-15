@@ -13,55 +13,35 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Create Release
-        env:
-          TOKEN: ${{ secrets.TOKEN }}
-        run: |
-          TAG="${{ gitea.ref_name }}"
-          REPO="${{ gitea.repository }}"
-          SERVER="${{ gitea.server_url }}"
-          curl -X POST \
-            -H "Authorization: token $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "tag_name": "'$TAG'",
-              "name": "Release '$TAG'",
-              "body": "# BanForge '$TAG'\n\nIntrusion Prevention System",
-              "draft": false,
-              "prerelease": false
-            }' \
-            "$SERVER/api/v1/repos/$REPO/releases"
-
-  build:
-    needs: release
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            arch: amd64
-          - goos: linux
-            arch: arm64
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - name: Install Gpg
+        run: apt-get update && apt-get install -y gnupg curl
+      - name: Install syft
+        run: curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Go setup
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25'
           cache: false
-      - run: go mod tidy
-      - run: go test ./...
-      - name: Build ${{ matrix.goos }}-${{ matrix.arch }}
+      - name: Install deps
+        run: go mod tidy
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v9.2.0
+        with:
+          args: --timeout=5m
+          skip-cache: true
+      - name: Run tests
+        run: go test ./...
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v6 
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.arch }}
-        run: go build -o banforge-${{ matrix.goos }}-${{ matrix.arch }} ./cmd/banforge
-      - name: Upload ${{ matrix.goos }}-${{ matrix.arch }}
-        env:
-          TOKEN: ${{ secrets.TOKEN }}
-        run: |
-          TAG="${{ gitea.ref_name }}"
-          FILE="banforge-${{ matrix.goos }}-${{ matrix.arch }}"
-          curl --user d3m0k1d:$TOKEN \
-            --upload-file $FILE \
-            https://gitea.d3m0k1d.ru/api/packages/d3m0k1d/generic/banforge/$TAG/$FILE
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+          GITEA_TOKEN: ${{ secrets.TOKEN }}
+
+

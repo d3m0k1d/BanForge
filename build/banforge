@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+description="BanForge - IPS log based system"
+command="/usr/bin/banforge"
+command_args="daemon"
+
+pidfile="/run/${RC_SVCNAME}.pid"
+command_background="yes"
+
+depend() {
+  need net
+  after network
+}
+
+start_post() {
+  einfo "BanForge is now running"
+}
+
+stop_post() {
+  einfo "BanForge is now stopped"
+}
