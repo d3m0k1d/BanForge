@@ -68,7 +68,7 @@ signs:
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
-    stdin: "{{ .Env.GPG_PASSWORD }}"
+    stdin: "{{ .Env.GPG_PASSPHRASE }}"
     artifacts: checksum
 
 sboms:

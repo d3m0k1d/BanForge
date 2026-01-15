@@ -47,7 +47,7 @@ jobs:
           args: release --clean
         env:
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
-          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GITEA_TOKEN: ${{ secrets.TOKEN }}
 
 
