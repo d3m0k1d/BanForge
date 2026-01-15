@@ -13,14 +13,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Gpg
-        run: apt-get update && apt-get install -y gnupg curl
-
-      - name: Import GPG key
-        if: secrets.GPG_PRIVATE_KEY != null
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "${{ secrets.GPG_FINGERPRINT }}" | gpg --import-ownertrust
       - name: Install syft
         run: curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin
       - name: Checkout
