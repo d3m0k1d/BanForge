@@ -25,3 +25,6 @@ clean:
 
 test:
 	go test ./...
+
+test-cover:
+	go test -cover ./...
