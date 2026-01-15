@@ -55,3 +55,28 @@ func (u *Ufw) Unban(ip string) error {
 	u.logger.Info("IP unbanned", "ip", ip, "output", string(output))
 	return nil
 }
+
+func (u *Ufw) Setup(config string) error {
+	if config != "" {
+		fmt.Printf("Ufw dont support config file\n")
+		cmd := exec.Command("sudo", "ufw", "enable")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			u.logger.Error("failed to enable ufw",
+				"error", err.Error(),
+				"output", string(output))
+			return fmt.Errorf("failed to enable ufw: %w", err)
+		}
+	}
+	if config == "" {
+		cmd := exec.Command("sudo", "ufw", "enable")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			u.logger.Error("failed to enable ufw",
+				"error", err.Error(),
+				"output", string(output))
+			return fmt.Errorf("failed to enable ufw: %w", err)
+		}
+	}
+	return nil
+}

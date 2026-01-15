@@ -57,3 +57,7 @@ func (f *Firewalld) Unban(ip string) error {
 	f.logger.Info("Reload " + string(output))
 	return nil
 }
+
+func (f *Firewalld) Setup(config string) error {
+	return nil
+}

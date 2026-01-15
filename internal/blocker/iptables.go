@@ -101,3 +101,7 @@ func (f *Iptables) Unban(ip string) error {
 		"output", string(output))
 	return nil
 }
+
+func (f *Iptables) Setup(config string) error {
+	return nil
+}

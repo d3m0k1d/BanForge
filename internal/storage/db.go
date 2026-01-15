@@ -13,8 +13,12 @@ type DB struct {
 }
 
 func NewDB() (*DB, error) {
-	db, err := sql.Open("sqlite3", "/var/lib/banforge/storage.db")
+	db, err := sql.Open("sqlite3", "/var/lib/banforge/storage.db?mode=rwc&_journal_mode=WAL&_busy_timeout=10000&cache=shared")
 	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 	return &DB{
