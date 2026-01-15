@@ -29,7 +29,11 @@ var AddCmd = &cobra.Command{
 			fmt.Printf("Rule name can't be empty\n")
 			os.Exit(1)
 		}
-		if service == "" && path == "" && status == "" && method == "" {
+		if service == "" {
+			fmt.Printf("Service name can't be empty\n")
+			os.Exit(1)
+		}
+		if path == "" && status == "" && method == "" {
 			fmt.Printf("At least 1 rule field must be filled in.")
 			os.Exit(1)
 		}
