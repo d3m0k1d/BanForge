@@ -29,7 +29,7 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - ufw/iptables/nftables/firewalld
 
 # Installation
-Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m01d/BanForge/releases) releases page and download it. Then create or copy a systemd unit file.
+Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it. Then create or copy a systemd unit file.
 Or clone the repo and use the Makefile.
 ```
 git clone https://gitea.d3m0k1d.ru/d3m0k1d/BanForge.git
@@ -39,6 +39,7 @@ cd bin
 ```
 
 # Usage
+For first steps use this commands
 ```bash
 banforge init   # Create config files and database
 banforge daemon # Start BanForge daemon (use systemd or another init system to create a service)
@@ -46,6 +47,7 @@ banforge daemon # Start BanForge daemon (use systemd or another init system to c
 You can edit the config file with examples in 
 - `/etc/banforge/config.toml` main config file
 - `/etc/banforge/rules.toml` ban rules
+For more information see the [docs](https://github.com/d3m0k1d/BanForge/docs).
 
 # License
 The project is licensed under the [GPL-3.0](https://github.com/d3m0k1d/BanForge/blob/master/LICENSE)
