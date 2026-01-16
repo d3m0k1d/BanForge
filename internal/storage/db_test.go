@@ -167,6 +167,72 @@ func TestSearchUnViewed(t *testing.T) {
 	}
 }
 
+func TestIsBanned(t *testing.T) {
+	d := createTestDBStruct(t)
+
+	err := d.CreateTable()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = d.db.Exec("INSERT INTO bans (ip, banned_at) VALUES (?, ?)", "127.0.0.1", time.Now().Format(time.RFC3339))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	isBanned, err := d.IsBanned("127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !isBanned {
+		t.Fatal("should be banned")
+	}
+}
+
+func TestAddBan(t *testing.T) {
+	d := createTestDBStruct(t)
+
+	err := d.CreateTable()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = d.AddBan("127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var ip string
+	err = d.db.QueryRow("SELECT ip FROM bans WHERE ip = ?", "127.0.0.1").Scan(&ip)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ip != "127.0.0.1" {
+		t.Fatal("ip should be 127.0.0.1")
+	}
+}
+
+func TestBanList(t *testing.T) {
+	d := createTestDBStruct(t)
+
+	err := d.CreateTable()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = d.db.Exec("INSERT INTO bans (ip, banned_at) VALUES (?, ?)", "127.0.0.1", time.Now().Format(time.RFC3339))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = d.BanList()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestClose(t *testing.T) {
 	d := createTestDBStruct(t)
 
