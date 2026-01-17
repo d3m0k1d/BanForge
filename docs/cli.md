@@ -31,6 +31,14 @@ banforge unban <ip>
 **Description**
 These commands provide an abstraction over your firewall. If you want to simplify the interface to your firewall, you can use these commands.
 
+### list - Lists the IP addresses that are currently blocked
+```shell
+banforge list
+```
+
+**Description**
+This command output table of IP addresses that are currently blocked
+
 ### rule - Manages detection rules
 
 ```shell
