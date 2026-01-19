@@ -19,7 +19,10 @@ type DB struct {
 }
 
 func NewDB() (*DB, error) {
-	db, err := sql.Open("sqlite3", "/var/lib/banforge/storage.db?mode=rwc&_journal_mode=WAL&_busy_timeout=10000&cache=shared")
+	db, err := sql.Open(
+		"sqlite3",
+		"/var/lib/banforge/storage.db?mode=rwc&_journal_mode=WAL&_busy_timeout=10000&cache=shared",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +55,9 @@ func (d *DB) CreateTable() error {
 }
 
 func (d *DB) SearchUnViewed() (*sql.Rows, error) {
-	rows, err := d.db.Query("SELECT id, service, ip, path, status, method, viewed, created_at FROM requests WHERE viewed = 0")
+	rows, err := d.db.Query(
+		"SELECT id, service, ip, path, status, method, viewed, created_at FROM requests WHERE viewed = 0",
+	)
 	if err != nil {
 		d.logger.Error("Failed to query database")
 		return nil, err
@@ -136,7 +141,10 @@ func (d *DB) BanList() error {
 
 func (d *DB) CheckExpiredBans() ([]string, error) {
 	var ips []string
-	rows, err := d.db.Query("SELECT ip FROM bans WHERE expired_at < ?", time.Now().Format(time.RFC3339))
+	rows, err := d.db.Query(
+		"SELECT ip FROM bans WHERE expired_at < ?",
+		time.Now().Format(time.RFC3339),
+	)
 	if err != nil {
 		d.logger.Error("Failed to get ban list", "error", err)
 		return nil, err

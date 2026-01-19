@@ -51,7 +51,16 @@ func (j *Judge) ProcessUnviewed() error {
 	}()
 	for rows.Next() {
 		var entry storage.LogEntry
-		err = rows.Scan(&entry.ID, &entry.Service, &entry.IP, &entry.Path, &entry.Status, &entry.Method, &entry.IsViewed, &entry.CreatedAt)
+		err = rows.Scan(
+			&entry.ID,
+			&entry.Service,
+			&entry.IP,
+			&entry.Path,
+			&entry.Status,
+			&entry.Method,
+			&entry.IsViewed,
+			&entry.CreatedAt,
+		)
 		if err != nil {
 			j.logger.Error(fmt.Sprintf("Failed to scan database row: %v", err))
 			continue
@@ -64,7 +73,13 @@ func (j *Judge) ProcessUnviewed() error {
 					(rule.Status == "" || entry.Status == rule.Status) &&
 					(rule.Path == "" || entry.Path == rule.Path) {
 
-					j.logger.Info(fmt.Sprintf("Rule matched for IP: %s, Service: %s", entry.IP, entry.Service))
+					j.logger.Info(
+						fmt.Sprintf(
+							"Rule matched for IP: %s, Service: %s",
+							entry.IP,
+							entry.Service,
+						),
+					)
 					ban_status, err := j.db.IsBanned(entry.IP)
 					if err != nil {
 						j.logger.Error(fmt.Sprintf("Failed to check ban status: %v", err))

@@ -62,7 +62,15 @@ var DaemonCmd = &cobra.Command{
 		}()
 
 		for _, svc := range cfg.Service {
-			log.Info("Processing service", "name", svc.Name, "enabled", svc.Enabled, "path", svc.LogPath)
+			log.Info(
+				"Processing service",
+				"name",
+				svc.Name,
+				"enabled",
+				svc.Enabled,
+				"path",
+				svc.LogPath,
+			)
 
 			if !svc.Enabled {
 				log.Info("Service disabled, skipping", "name", svc.Name)

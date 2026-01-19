@@ -60,7 +60,14 @@ var ListCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		for _, rule := range r {
-			fmt.Printf("Name: %s\nService: %s\nPath: %s\nStatus: %s\nMethod: %s\n\n", rule.Name, rule.ServiceName, rule.Path, rule.Status, rule.Method)
+			fmt.Printf(
+				"Name: %s\nService: %s\nPath: %s\nStatus: %s\nMethod: %s\n\n",
+				rule.Name,
+				rule.ServiceName,
+				rule.Path,
+				rule.Status,
+				rule.Method,
+			)
 		}
 	},
 }

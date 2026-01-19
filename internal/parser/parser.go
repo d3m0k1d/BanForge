@@ -22,7 +22,9 @@ type Scanner struct {
 }
 
 func NewScanner(path string) (*Scanner, error) {
-	file, err := os.Open(path) // #nosec G304 -- admin tool, runs as root, path controlled by operator
+	file, err := os.Open(
+		path,
+	) // #nosec G304 -- admin tool, runs as root, path controlled by operator
 	if err != nil {
 		return nil, err
 	}

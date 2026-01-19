@@ -25,7 +25,14 @@ func LoadRuleConfig() ([]Rule, error) {
 	return cfg.Rules, nil
 }
 
-func NewRule(Name string, ServiceName string, Path string, Status string, Method string, ttl string) error {
+func NewRule(
+	Name string,
+	ServiceName string,
+	Path string,
+	Status string,
+	Method string,
+	ttl string,
+) error {
 	r, err := LoadRuleConfig()
 	if err != nil {
 		r = []Rule{}
@@ -34,7 +41,17 @@ func NewRule(Name string, ServiceName string, Path string, Status string, Method
 		fmt.Printf("Rule name can't be empty\n")
 		return nil
 	}
-	r = append(r, Rule{Name: Name, ServiceName: ServiceName, Path: Path, Status: Status, Method: Method, BanTime: ttl})
+	r = append(
+		r,
+		Rule{
+			Name:        Name,
+			ServiceName: ServiceName,
+			Path:        Path,
+			Status:      Status,
+			Method:      Method,
+			BanTime:     ttl,
+		},
+	)
 	file, err := os.Create("/etc/banforge/rules.toml")
 	if err != nil {
 		return err

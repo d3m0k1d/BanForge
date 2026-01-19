@@ -12,10 +12,12 @@ linters:
     - govet
     - staticcheck
     - gosec
+    - nilerr
 
 formatters:
   enable:
     - gofmt
     - goimports
+    - golines
 
 
