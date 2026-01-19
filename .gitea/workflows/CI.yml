@@ -1,4 +1,4 @@
-name: CI.yml
+name: build
 
 on:
   push:
