@@ -143,7 +143,13 @@ func (d *DB) CheckExpiredBans() ([]string, error) {
 	}
 	for rows.Next() {
 		var ip string
-		err := rows.Scan(&ip)
+		r, err := d.db.Exec("DELETE FROM bans WHERE ip = ?", ip)
+		if err != nil {
+			d.logger.Error("Failed to get ban list", "error", err)
+			return nil, err
+		}
+		d.logger.Info("Ban removed", "ip", ip, "rows", r)
+		err = rows.Scan(&ip)
 		if err != nil {
 			d.logger.Error("Failed to get ban list", "error", err)
 			return nil, err
