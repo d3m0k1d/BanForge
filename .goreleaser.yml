@@ -13,7 +13,7 @@ gitea_urls:
 builds:
   - id: banforge
     main: ./cmd/banforge/main.go
-    binary: banforge-{{ .Version }}-{{ .Os }}-{{ .Arch }}
+    binary: banforge
     ignore:
       - goos: windows
       - goos: darwin
@@ -34,7 +34,7 @@ archives:
 nfpms:
   - id: banforge
     package_name: banforge
-    file_name_template: "banforge"
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     homepage: https://gitea.d3m0k1d.ru/d3m0k1d/BanForge
     description: BanForge IPS log-based system
     maintainer: d3m0k1d <contact@d3m0k1d.ru>
