@@ -11,19 +11,22 @@ Example:
 
 [[service]]
   name = "nginx"
+  logging = "file"
   log_path = "/home/d3m0k1d/test.log"
   enabled = true
 
 [[service]]
   name = "nginx"
-  log_path = "/var/log/nginx/access.log"
+  logging = "journald"
+  log_path = "nginx"
   enabled = false
 ```
 **Description**
 The [firewall] section defines firewall parameters. The banforge init command automatically detects your installed firewall (nftables, iptables, ufw, firewalld). For firewalls that require a configuration file, specify the path in the config parameter.
 
 The [[service]] section is configured manually. Currently, only nginx is supported. To add a service, create a [[service]] block and specify the log_path to the nginx log file you want to monitor.
-
+logging require in format "file" or "journald"
+if you use journald logging, log_path require in format "service_name"
 
 ## rules.toml
 Rules configuration file for BanForge.

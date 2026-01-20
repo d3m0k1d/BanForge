@@ -46,8 +46,7 @@ func NewScannerTail(path string) (*Scanner, error) {
 }
 
 func NewScannerJournald(unit string) (*Scanner, error) {
-	cmd := exec.Command("journalctl", "-u", unit, "-f", "-n", "0", "-o", "cat", "--no-pager")
-
+	cmd := exec.Command("journalctl", "-u", unit, "-f", "-n", "0", "-o", "short", "--no-pager")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
