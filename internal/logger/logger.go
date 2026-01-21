@@ -15,7 +15,7 @@ type Logger struct {
 
 func New(debug bool) *Logger {
 	logDir := "/var/log/banforge"
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0750); err != nil {
 		return nil
 	}
 

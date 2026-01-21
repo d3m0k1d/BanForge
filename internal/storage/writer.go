@@ -25,9 +25,13 @@ func Write(db *DB, resultCh <-chan *LogEntry) {
 		}
 
 		stmt, err := tx.Prepare(
-			"INSERT INTO requests (service, ip, path, method, status, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+			"INSERT INTO requests (service, ip, path, method, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+		)
 		if err != nil {
-			tx.Rollback()
+			err := tx.Rollback()
+			if err != nil {
+				db.logger.Error("Failed to rollback transaction", "error", err)
+			}
 			db.logger.Error("Failed to prepare statement", "error", err)
 			return
 		}
