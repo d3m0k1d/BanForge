@@ -3,8 +3,7 @@ package storage
 import (
 	"database/sql"
 	"github.com/d3m0k1d/BanForge/internal/logger"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
+	"modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,7 +17,7 @@ func createTestDB(t *testing.T) *sql.DB {
 	}
 
 	filePath := filepath.Join(tmpDir, "test.db")
-	db, err := sql.Open("sqlite3", filePath)
+	db, err := sql.Open("sqlite", filePath)
 	if err != nil {
 		t.Fatal(err)
 	}

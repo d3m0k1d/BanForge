@@ -10,8 +10,7 @@ import (
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/jedib0t/go-pretty/v6/table"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
+	_ "modernc.org/sqlite"
 )
 
 type DB struct {
@@ -21,7 +20,7 @@ type DB struct {
 
 func NewDB() (*DB, error) {
 	db, err := sql.Open(
-		"sqlite3",
+		"sqlite",
 		"/var/lib/banforge/storage.db?mode=rwc&_journal_mode=WAL&_busy_timeout=10000&cache=shared",
 	)
 	if err != nil {
