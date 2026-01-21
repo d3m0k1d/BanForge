@@ -2,15 +2,13 @@ package storage
 
 import (
 	"database/sql"
-	"os"
-
 	"fmt"
-	"time"
-
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/jedib0t/go-pretty/v6/table"
 	_ "modernc.org/sqlite"
+	"os"
+	"time"
 )
 
 type DB struct {
@@ -23,8 +21,8 @@ func NewDB() (*DB, error) {
 		"sqlite",
 		"/var/lib/banforge/storage.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)",
 	)
-	db.SetMaxOpenConns(4)
-	db.SetMaxIdleConns(2)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0)
 	if err != nil {
 		return nil, err
@@ -54,26 +52,6 @@ func (d *DB) CreateTable() error {
 		return err
 	}
 	d.logger.Info("Created tables")
-	return nil
-}
-
-func (d *DB) SearchUnViewed() (*sql.Rows, error) {
-	rows, err := d.db.Query(
-		"SELECT id, service, ip, path, status, method, viewed, created_at FROM requests WHERE viewed = 0",
-	)
-	if err != nil {
-		d.logger.Error("Failed to query database")
-		return nil, err
-	}
-	return rows, nil
-}
-
-func (d *DB) MarkAsViewed(id int) error {
-	_, err := d.db.Exec("UPDATE requests SET viewed = 1 WHERE id = ?", id)
-	if err != nil {
-		d.logger.Error("Failed to mark as viewed", "error", err)
-		return err
-	}
 	return nil
 }
 

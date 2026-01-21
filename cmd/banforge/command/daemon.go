@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/d3m0k1d/BanForge/internal/blocker"
 	"github.com/d3m0k1d/BanForge/internal/config"
@@ -20,6 +19,8 @@ var DaemonCmd = &cobra.Command{
 	Use:   "daemon",
 	Short: "Run BanForge daemon process",
 	Run: func(cmd *cobra.Command, args []string) {
+		entryCh := make(chan *storage.LogEntry, 1000)
+		resultCh := make(chan *storage.LogEntry, 100)
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 		defer stop()
 		log := logger.New(false)
@@ -48,19 +49,10 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load rules", "error", err)
 			os.Exit(1)
 		}
-		j := judge.New(db, b)
+		j := judge.New(db, b, resultCh, entryCh)
 		j.LoadRules(r)
 		go j.UnbanChecker()
-		go func() {
-			ticker := time.NewTicker(5 * time.Second)
-			defer ticker.Stop()
-			for range ticker.C {
-				if err := j.ProcessUnviewed(); err != nil {
-					log.Error("Failed to process unviewed", "error", err)
-				}
-			}
-		}()
-		resultCh := make(chan *storage.LogEntry, 1000)
+		go j.Tribunal()
 		go storage.Write(db, resultCh)
 		var scanners []*parser.Scanner
 
@@ -99,12 +91,12 @@ var DaemonCmd = &cobra.Command{
 					if svc.Name == "nginx" {
 						log.Info("Starting nginx parser", "service", serviceName)
 						ng := parser.NewNginxParser()
-						ng.Parse(p.Events(), resultCh)
+						ng.Parse(p.Events(), entryCh)
 					}
 					if svc.Name == "ssh" {
 						log.Info("Starting ssh parser", "service", serviceName)
 						ssh := parser.NewSshdParser()
-						ssh.Parse(p.Events(), resultCh)
+						ssh.Parse(p.Events(), entryCh)
 					}
 				}(pars, svc.Name)
 				continue

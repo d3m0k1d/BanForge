@@ -31,12 +31,11 @@ func (p *SshdParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogEnt
 				continue
 			}
 			resultCh <- &storage.LogEntry{
-				Service:  "ssh",
-				IP:       matches[6],
-				Path:     matches[5], // user
-				Status:   "Failed",
-				Method:   matches[4], // method auth
-				IsViewed: false,
+				Service: "ssh",
+				IP:      matches[6],
+				Path:    matches[5], // user
+				Status:  "Failed",
+				Method:  matches[4], // method auth
 			}
 			p.logger.Info(
 				"Parsed ssh log entry",

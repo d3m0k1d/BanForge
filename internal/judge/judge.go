@@ -16,14 +16,18 @@ type Judge struct {
 	logger         *logger.Logger
 	Blocker        blocker.BlockerEngine
 	rulesByService map[string][]config.Rule
+	entryCh        chan *storage.LogEntry
+	resultCh       chan *storage.LogEntry
 }
 
-func New(db *storage.DB, b blocker.BlockerEngine) *Judge {
+func New(db *storage.DB, b blocker.BlockerEngine, resultCh chan *storage.LogEntry, entryCh chan *storage.LogEntry) *Judge {
 	return &Judge{
 		db:             db,
 		logger:         logger.New(false),
 		rulesByService: make(map[string][]config.Rule),
 		Blocker:        b,
+		entryCh:        entryCh,
+		resultCh:       resultCh,
 	}
 }
 
@@ -38,84 +42,70 @@ func (j *Judge) LoadRules(rules []config.Rule) {
 	j.logger.Info("Rules loaded and indexed by service")
 }
 
-func (j *Judge) ProcessUnviewed() error {
-	rows, err := j.db.SearchUnViewed()
-	if err != nil {
-		j.logger.Error(fmt.Sprintf("Failed to query database: %v", err))
-		return err
-	}
-	j.logger.Info("Unviewed logs found")
-	defer func() {
-		err = rows.Close()
-		if err != nil {
-			j.logger.Error(fmt.Sprintf("Failed to close database connection: %v", err))
-		}
-	}()
-	for rows.Next() {
-		var entry storage.LogEntry
-		err = rows.Scan(
-			&entry.ID,
-			&entry.Service,
-			&entry.IP,
-			&entry.Path,
-			&entry.Status,
-			&entry.Method,
-			&entry.IsViewed,
-			&entry.CreatedAt,
-		)
-		if err != nil {
-			j.logger.Error(fmt.Sprintf("Failed to scan database row: %v", err))
+func (j *Judge) Tribunal() {
+	j.logger.Info("Tribunal started")
+
+	for entry := range j.entryCh {
+		j.logger.Debug("Processing entry", "ip", entry.IP, "service", entry.Service, "status", entry.Status)
+
+		rules, serviceExists := j.rulesByService[entry.Service]
+		if !serviceExists {
+			j.logger.Debug("No rules for service", "service", entry.Service)
 			continue
 		}
 
-		rules, serviceExists := j.rulesByService[entry.Service]
-		if serviceExists {
-			for _, rule := range rules {
-				if (rule.Method == "" || entry.Method == rule.Method) &&
-					(rule.Status == "" || entry.Status == rule.Status) &&
-					matchPath(entry.Path, rule.Path) {
+		ruleMatched := false
+		for _, rule := range rules {
+			methodMatch := rule.Method == "" || entry.Method == rule.Method
+			statusMatch := rule.Status == "" || entry.Status == rule.Status
+			pathMatch := matchPath(entry.Path, rule.Path)
 
-					j.logger.Info(
-						fmt.Sprintf(
-							"Rule matched for IP: %s, Service: %s",
-							entry.IP,
-							entry.Service,
-						),
-					)
-					ban_status, err := j.db.IsBanned(entry.IP)
-					if err != nil {
-						j.logger.Error(fmt.Sprintf("Failed to check ban status: %v", err))
-						return err
-					}
-					if !ban_status {
-						err = j.Blocker.Ban(entry.IP)
-						if err != nil {
-							j.logger.Error(fmt.Sprintf("Failed to ban IP: %v", err))
-						}
-						j.logger.Info(fmt.Sprintf("IP banned: %s", entry.IP))
-						err = j.db.AddBan(entry.IP, rule.BanTime)
-						if err != nil {
-							j.logger.Error(fmt.Sprintf("Failed to add ban: %v", err))
-						}
-					}
+			j.logger.Debug(
+				"Testing rule",
+				"rule", rule.Name,
+				"method_match", methodMatch,
+				"status_match", statusMatch,
+				"path_match", pathMatch,
+			)
+
+			if methodMatch && statusMatch && pathMatch {
+				ruleMatched = true
+				j.logger.Info("Rule matched", "rule", rule.Name, "ip", entry.IP)
+
+				banned, err := j.db.IsBanned(entry.IP)
+				if err != nil {
+					j.logger.Error("Failed to check ban status", "ip", entry.IP, "error", err)
 					break
 				}
+
+				if banned {
+					j.logger.Info("IP already banned", "ip", entry.IP)
+					j.resultCh <- entry
+					break
+				}
+
+				err = j.db.AddBan(entry.IP, rule.BanTime)
+				if err != nil {
+					j.logger.Error("Failed to add ban to database", "ip", entry.IP, "ban_time", rule.BanTime, "error", err)
+					break
+				}
+
+				if err := j.Blocker.Ban(entry.IP); err != nil {
+					j.logger.Error("Failed to ban IP at firewall", "ip", entry.IP, "error", err)
+					break
+				}
+				j.logger.Info("IP banned successfully", "ip", entry.IP, "rule", rule.Name, "ban_time", rule.BanTime)
+				j.resultCh <- entry
+				break
 			}
 		}
-		err = j.db.MarkAsViewed(entry.ID)
-		if err != nil {
-			j.logger.Error(fmt.Sprintf("Failed to mark entry as viewed: %v", err))
-		} else {
-			j.logger.Info(fmt.Sprintf("Entry marked as viewed: ID=%d", entry.ID))
+
+		if !ruleMatched {
+			j.logger.Debug("No rules matched", "ip", entry.IP, "service", entry.Service)
 		}
 	}
 
-	if err = rows.Err(); err != nil {
-		j.logger.Error(fmt.Sprintf("Error iterating rows: %v", err))
-		return err
-	}
-
-	return nil
+	j.logger.Info("Tribunal stopped - entryCh closed")
 }
 
 func (j *Judge) UnbanChecker() {
