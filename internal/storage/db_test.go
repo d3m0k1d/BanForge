@@ -3,7 +3,8 @@ package storage
 import (
 	"database/sql"
 	"github.com/d3m0k1d/BanForge/internal/logger"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 	"os"
 	"path/filepath"
 	"testing"
