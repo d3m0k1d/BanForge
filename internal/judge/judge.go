@@ -2,12 +2,12 @@ package judge
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/d3m0k1d/BanForge/internal/blocker"
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/d3m0k1d/BanForge/internal/storage"
+	"strings"
+	"time"
 )
 
 type Judge struct {
@@ -71,7 +71,7 @@ func (j *Judge) ProcessUnviewed() error {
 			for _, rule := range rules {
 				if (rule.Method == "" || entry.Method == rule.Method) &&
 					(rule.Status == "" || entry.Status == rule.Status) &&
-					(rule.Path == "" || entry.Path == rule.Path) {
+					matchPath(entry.Path, rule.Path) {
 
 					j.logger.Info(
 						fmt.Sprintf(
@@ -140,4 +140,19 @@ func (j *Judge) UnbanChecker() {
 			j.logger.Info(fmt.Sprintf("IP unbanned: %s", ip))
 		}
 	}
+}
+
+func matchPath(path string, rulePath string) bool {
+	if rulePath == "" {
+		return true
+	}
+	if strings.HasPrefix(rulePath, "/*") {
+		prefix := strings.TrimPrefix(rulePath, "*")
+		return strings.HasPrefix(path, prefix)
+	}
+	if strings.HasSuffix(rulePath, "*") {
+		suffix := strings.TrimSuffix(rulePath, "*")
+		return strings.HasSuffix(path, suffix)
+	}
+	return path == rulePath
 }
