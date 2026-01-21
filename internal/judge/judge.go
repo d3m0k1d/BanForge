@@ -20,7 +20,12 @@ type Judge struct {
 	resultCh       chan *storage.LogEntry
 }
 
-func New(db *storage.DB, b blocker.BlockerEngine, resultCh chan *storage.LogEntry, entryCh chan *storage.LogEntry) *Judge {
+func New(
+	db *storage.DB,
+	b blocker.BlockerEngine,
+	resultCh chan *storage.LogEntry,
+	entryCh chan *storage.LogEntry,
+) *Judge {
 	return &Judge{
 		db:             db,
 		logger:         logger.New(false),
@@ -46,7 +51,15 @@ func (j *Judge) Tribunal() {
 	j.logger.Info("Tribunal started")
 
 	for entry := range j.entryCh {
-		j.logger.Debug("Processing entry", "ip", entry.IP, "service", entry.Service, "status", entry.Status)
+		j.logger.Debug(
+			"Processing entry",
+			"ip",
+			entry.IP,
+			"service",
+			entry.Service,
+			"status",
+			entry.Status,
+		)
 
 		rules, serviceExists := j.rulesByService[entry.Service]
 		if !serviceExists {
@@ -86,7 +99,15 @@ func (j *Judge) Tribunal() {
 
 				err = j.db.AddBan(entry.IP, rule.BanTime)
 				if err != nil {
-					j.logger.Error("Failed to add ban to database", "ip", entry.IP, "ban_time", rule.BanTime, "error", err)
+					j.logger.Error(
+						"Failed to add ban to database",
+						"ip",
+						entry.IP,
+						"ban_time",
+						rule.BanTime,
+						"error",
+						err,
+					)
 					break
 				}
 
@@ -94,7 +115,15 @@ func (j *Judge) Tribunal() {
 					j.logger.Error("Failed to ban IP at firewall", "ip", entry.IP, "error", err)
 					break
 				}
-				j.logger.Info("IP banned successfully", "ip", entry.IP, "rule", rule.Name, "ban_time", rule.BanTime)
+				j.logger.Info(
+					"IP banned successfully",
+					"ip",
+					entry.IP,
+					"rule",
+					rule.Name,
+					"ban_time",
+					rule.BanTime,
+				)
 				j.resultCh <- entry
 				break
 			}

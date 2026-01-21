@@ -3,12 +3,13 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/jedib0t/go-pretty/v6/table"
 	_ "modernc.org/sqlite"
-	"os"
-	"time"
 )
 
 type DB struct {
