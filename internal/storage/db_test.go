@@ -3,7 +3,7 @@ package storage
 import (
 	"database/sql"
 	"github.com/d3m0k1d/BanForge/internal/logger"
-	"modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"testing"
