@@ -45,7 +45,9 @@ nfpms:
       - rpm
       - archlinux
     bindir: /usr/bin
-
+    scripts:
+      postinstall: build/postinstall.sh
+      postremove: build/postremove.sh
 release: 
   gitea:
     owner: d3m0k1d
