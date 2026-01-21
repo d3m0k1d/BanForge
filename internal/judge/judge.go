@@ -2,12 +2,13 @@ package judge
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/d3m0k1d/BanForge/internal/blocker"
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/d3m0k1d/BanForge/internal/storage"
-	"strings"
-	"time"
 )
 
 type Judge struct {
