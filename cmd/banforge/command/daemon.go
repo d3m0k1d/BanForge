@@ -67,7 +67,7 @@ var DaemonCmd = &cobra.Command{
 		j.LoadRules(r)
 		go j.UnbanChecker()
 		go j.Tribunal()
-		go storage.Write(reqDb_w, resultCh)
+		go storage.WriteReq(reqDb_w, resultCh)
 		var scanners []*parser.Scanner
 
 		for _, svc := range cfg.Service {

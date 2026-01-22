@@ -28,7 +28,7 @@ func TestWrite_BatchInsert(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		Write(writer, resultCh)
+		WriteReq(writer, resultCh)
 		close(done)
 	}()
 
@@ -115,7 +115,7 @@ func TestWrite_BatchSizeTrigger(t *testing.T) {
 	resultCh := make(chan *LogEntry, 100)
 	done := make(chan bool)
 	go func() {
-		Write(writer, resultCh)
+		WriteReq(writer, resultCh)
 		close(done)
 	}()
 
@@ -167,7 +167,7 @@ func TestWrite_FlushInterval(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		Write(writer, resultCh)
+		WriteReq(writer, resultCh)
 		close(done)
 	}()
 
@@ -216,7 +216,7 @@ func TestWrite_EmptyBatch(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		Write(writer, resultCh)
+		WriteReq(writer, resultCh)
 		close(done)
 	}()
 
@@ -250,7 +250,7 @@ func TestWrite_ChannelClosed(t *testing.T) {
 
 	done := make(chan bool)
 	go func() {
-		Write(writer, resultCh)
+		WriteReq(writer, resultCh)
 		close(done)
 	}()
 
