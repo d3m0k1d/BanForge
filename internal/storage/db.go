@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -17,7 +18,11 @@ func CreateTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to open requests db: %w", err)
 	}
-	defer db_r.Close()
+	defer func() {
+		if err != nil {
+			db_r.Close()
+		}
+	}()
 
 	_, err = db_r.Exec(CreateRequestsTable)
 	if err != nil {
@@ -34,7 +39,11 @@ func CreateTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to open bans db: %w", err)
 	}
-	defer db_b.Close()
+	defer func() {
+		if err != nil {
+			db_b.Close()
+		}
+	}()
 
 	_, err = db_b.Exec(CreateBansTable)
 	if err != nil {

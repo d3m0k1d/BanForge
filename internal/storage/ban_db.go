@@ -3,12 +3,13 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/jedib0t/go-pretty/v6/table"
 	_ "modernc.org/sqlite"
-	"os"
-	"time"
 )
 
 // Writer block
@@ -18,7 +19,10 @@ type BanWriter struct {
 }
 
 func NewBanWriter() (*BanWriter, error) {
-	db, err := sql.Open("sqlite", "/var/lib/banforge/bans.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)")
+	db, err := sql.Open(
+		"sqlite",
+		"/var/lib/banforge/bans.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +87,11 @@ func (w *BanWriter) RemoveExpiredBans() ([]string, error) {
 		w.logger.Error("Failed to get expired bans", "error", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			w.logger.Error("Failed to close rows", "error", err)
+		}
+	}()
 
 	for rows.Next() {
 		var ip string
