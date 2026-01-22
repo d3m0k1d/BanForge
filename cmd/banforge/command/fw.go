@@ -18,7 +18,7 @@ var UnbanCmd = &cobra.Command{
 	Use:   "unban",
 	Short: "Unban IP",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := storage.NewDB()
+		db, err := storage.NewBanWriter()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -60,7 +60,7 @@ var BanCmd = &cobra.Command{
 	Use:   "ban",
 	Short: "Ban IP",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := storage.NewDB()
+		db, err := storage.NewBanWriter()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

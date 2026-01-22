@@ -12,7 +12,8 @@ import (
 )
 
 type Judge struct {
-	db             *storage.DB
+	db_r           *storage.BanReader
+	db_w           *storage.BanWriter
 	logger         *logger.Logger
 	Blocker        blocker.BlockerEngine
 	rulesByService map[string][]config.Rule
@@ -21,13 +22,15 @@ type Judge struct {
 }
 
 func New(
-	db *storage.DB,
+	db_r *storage.BanReader,
+	db_w *storage.BanWriter,
 	b blocker.BlockerEngine,
 	resultCh chan *storage.LogEntry,
 	entryCh chan *storage.LogEntry,
 ) *Judge {
 	return &Judge{
-		db:             db,
+		db_w:           db_w,
+		db_r:           db_r,
 		logger:         logger.New(false),
 		rulesByService: make(map[string][]config.Rule),
 		Blocker:        b,
@@ -85,7 +88,7 @@ func (j *Judge) Tribunal() {
 				ruleMatched = true
 				j.logger.Info("Rule matched", "rule", rule.Name, "ip", entry.IP)
 
-				banned, err := j.db.IsBanned(entry.IP)
+				banned, err := j.db_r.IsBanned(entry.IP)
 				if err != nil {
 					j.logger.Error("Failed to check ban status", "ip", entry.IP, "error", err)
 					break
@@ -97,7 +100,7 @@ func (j *Judge) Tribunal() {
 					break
 				}
 
-				err = j.db.AddBan(entry.IP, rule.BanTime)
+				err = j.db_w.AddBan(entry.IP, rule.BanTime)
 				if err != nil {
 					j.logger.Error(
 						"Failed to add ban to database",
@@ -142,22 +145,16 @@ func (j *Judge) UnbanChecker() {
 	defer tick.Stop()
 
 	for range tick.C {
-		ips, err := j.db.CheckExpiredBans()
+		ips, err := j.db_w.RemoveExpiredBans()
 		if err != nil {
 			j.logger.Error(fmt.Sprintf("Failed to check expired bans: %v", err))
 			continue
 		}
 
 		for _, ip := range ips {
-			err = j.db.RemoveBan(ip)
-			if err != nil {
-				j.logger.Error(fmt.Sprintf("Failed to remove ban: %v", err))
-			}
 			if err := j.Blocker.Unban(ip); err != nil {
-				j.logger.Error(fmt.Sprintf("Failed to unban IP %s: %v", ip, err))
-				continue
+				j.logger.Error(fmt.Sprintf("Failed to unban IP at firewall: %v", err))
 			}
-			j.logger.Info(fmt.Sprintf("IP unbanned: %s", ip))
 		}
 	}
 }

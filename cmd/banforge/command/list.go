@@ -13,7 +13,7 @@ var BanListCmd = &cobra.Command{
 	Short: "List banned IP adresses",
 	Run: func(cmd *cobra.Command, args []string) {
 		var log = logger.New(false)
-		d, err := storage.NewDB()
+		d, err := storage.NewBanReader()
 		if err != nil {
 			log.Error("Failed to create database", "error", err)
 			os.Exit(1)

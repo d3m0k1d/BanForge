@@ -82,23 +82,11 @@ var InitCmd = &cobra.Command{
 		}
 		fmt.Println("Firewall configured")
 
-		db, err := storage.NewDB()
+		err = storage.CreateTables()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		err = db.CreateTable()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer func() {
-			err = db.Close()
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}()
 		fmt.Println("Firewall detected and configured")
 
 		fmt.Println("BanForge initialized successfully!")

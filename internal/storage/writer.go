@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func Write(db *DB, resultCh <-chan *LogEntry) {
+func Write(db *Request_Writer, resultCh <-chan *LogEntry) {
 	db.logger.Info("Starting log writer")
 	const batchSize = 100
 	const flushInterval = 1 * time.Second
@@ -28,17 +28,15 @@ func Write(db *DB, resultCh <-chan *LogEntry) {
 			"INSERT INTO requests (service, ip, path, method, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 		)
 		if err != nil {
-			err := tx.Rollback()
-			if err != nil {
-				db.logger.Error("Failed to rollback transaction", "error", err)
-			}
 			db.logger.Error("Failed to prepare statement", "error", err)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				db.logger.Error("Failed to rollback transaction", "error", rollbackErr)
+			}
 			return
 		}
 		defer func() {
-			err := stmt.Close()
-			if err != nil {
-				db.logger.Error("Failed to close statement", "error", err)
+			if closeErr := stmt.Close(); closeErr != nil {
+				db.logger.Error("Failed to close statement", "error", closeErr)
 			}
 		}()
 
@@ -58,10 +56,10 @@ func Write(db *DB, resultCh <-chan *LogEntry) {
 
 		if err := tx.Commit(); err != nil {
 			db.logger.Error("Failed to commit transaction", "error", err)
-		} else {
-			db.logger.Debug("Flushed batch", "count", len(batch))
+			return
 		}
 
+		db.logger.Debug("Flushed batch", "count", len(batch))
 		batch = batch[:0]
 	}
 

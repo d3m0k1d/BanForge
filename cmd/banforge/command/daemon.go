@@ -25,13 +25,27 @@ var DaemonCmd = &cobra.Command{
 		defer stop()
 		log := logger.New(false)
 		log.Info("Starting BanForge daemon")
-		db, err := storage.NewDB()
+		reqDb_w, err := storage.NewRequestsWr()
 		if err != nil {
-			log.Error("Failed to create database", "error", err)
+			log.Error("Failed to create request writer", "error", err)
+			os.Exit(1)
+		}
+		banDb_r, err := storage.NewBanReader()
+		if err != nil {
+			log.Error("Failed to create ban reader", "error", err)
+			os.Exit(1)
+		}
+		banDb_w, err := storage.NewBanWriter()
+		if err != nil {
+			log.Error("Failed to create ban writter", "error", err)
 			os.Exit(1)
 		}
 		defer func() {
-			err = db.Close()
+			err = banDb_r.Close()
+			if err != nil {
+				log.Error("Failed to close database connection", "error", err)
+			}
+			err = banDb_w.Close()
 			if err != nil {
 				log.Error("Failed to close database connection", "error", err)
 			}
@@ -49,11 +63,11 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load rules", "error", err)
 			os.Exit(1)
 		}
-		j := judge.New(db, b, resultCh, entryCh)
+		j := judge.New(banDb_r, banDb_w, b, resultCh, entryCh)
 		j.LoadRules(r)
 		go j.UnbanChecker()
 		go j.Tribunal()
-		go storage.Write(db, resultCh)
+		go storage.Write(reqDb_w, resultCh)
 		var scanners []*parser.Scanner
 
 		for _, svc := range cfg.Service {
