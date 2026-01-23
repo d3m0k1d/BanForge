@@ -22,9 +22,9 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - [x] Rule system
 - [x] Nginx and Sshd support
 - [x] Working with ufw/iptables/nftables/firewalld
-- [] Add support for most popular web-service
-- [] User regexp for custom services
-- [] TUI interface
+- [ ] Add support for most popular web-service
+- [ ] User regexp for custom services
+- [ ] TUI interface
 
 # Requirements
 
