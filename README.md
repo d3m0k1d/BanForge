@@ -15,15 +15,16 @@ Log-based IPS system written in Go for Linux-based system.
 
 # Overview
 BanForge is a simple IPS for replacement fail2ban in Linux system.
-The project is currently in its early stages of development.
-All release are available on my self-hosted [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge) because Github has limits for Actions.
+All release are available on my self-hosted [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge) after release v1.0.0 are available on Github release page.
 If you have any questions or suggestions, create issue on [Github](https://github.com/d3m0k1d/BanForge/issues).
 
 ## Roadmap
-- [x] Real-time Nginx log monitoring
-- [ ] Add support for other service
-- [ ] Add support for user service with regular expressions
-- [ ] TUI interface
+- [x] Rule system
+- [x] Nginx and Sshd support
+- [x] Working with ufw/iptables/nftables/firewalld
+- [] Add support for most popular web-service
+- [] User regexp for custom services
+- [] TUI interface
 
 # Requirements
 
@@ -31,7 +32,7 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - ufw/iptables/nftables/firewalld
 
 # Installation
-Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it. Then create or copy a systemd unit file.
+Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it. Then create or copy(/build dir) a systemd unit(openrc script0) file.
 Or clone the repo and use the Makefile.
 ```
 git clone https://gitea.d3m0k1d.ru/d3m0k1d/BanForge.git
