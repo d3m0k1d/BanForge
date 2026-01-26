@@ -105,7 +105,7 @@ var BanCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		err = db.AddBan(ip, ttl_fw)
+		err = db.AddBan(ip, ttl_fw, "manual ban")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

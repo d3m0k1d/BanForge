@@ -26,7 +26,7 @@ func TestBanWriter_AddBan(t *testing.T) {
 	ip := "192.168.1.1"
 	ttl := "1h"
 
-	err = writer.AddBan(ip, ttl)
+	err = writer.AddBan(ip, ttl, "test")
 	if err != nil {
 		t.Errorf("AddBan failed: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestBanWriter_RemoveBan(t *testing.T) {
 	}
 
 	ip := "192.168.1.2"
-	err = writer.AddBan(ip, "1h")
+	err = writer.AddBan(ip, "1h", "test")
 	if err != nil {
 		t.Fatalf("Failed to add ban: %v", err)
 	}
@@ -111,13 +111,13 @@ func TestBanWriter_RemoveExpiredBans(t *testing.T) {
 	}
 
 	expiredIP := "192.168.1.3"
-	err = writer.AddBan(expiredIP, "-1h")
+	err = writer.AddBan(expiredIP, "-1h", "tes")
 	if err != nil {
 		t.Fatalf("Failed to add expired ban: %v", err)
 	}
 
 	activeIP := "192.168.1.4"
-	err = writer.AddBan(activeIP, "1h")
+	err = writer.AddBan(activeIP, "1h", "test")
 	if err != nil {
 		t.Fatalf("Failed to add active ban: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestBanReader_IsBanned(t *testing.T) {
 	}
 
 	ip := "192.168.1.5"
-	err = writer.AddBan(ip, "1h")
+	err = writer.AddBan(ip, "1h", "test")
 	if err != nil {
 		t.Fatalf("Failed to add ban: %v", err)
 	}
@@ -280,7 +280,7 @@ func TestBanWriter_AddBan_InvalidDuration(t *testing.T) {
 		t.Fatalf("Failed to create table: %v", err)
 	}
 
-	err = writer.AddBan("192.168.1.7", "invalid_duration")
+	err = writer.AddBan("192.168.1.7", "invalid_duration", "test")
 	if err == nil {
 		t.Error("Expected error for invalid duration")
 	} else if err.Error() == "" || err.Error() == "<nil>" {
@@ -306,7 +306,7 @@ func TestMultipleBans(t *testing.T) {
 	ips := []string{"192.168.1.8", "192.168.1.9", "192.168.1.10"}
 
 	for _, ip := range ips {
-		err := writer.AddBan(ip, "1h")
+		err := writer.AddBan(ip, "1h", "test")
 		if err != nil {
 			t.Errorf("Failed to add ban for IP %s: %v", ip, err)
 		}

@@ -100,7 +100,7 @@ func (j *Judge) Tribunal() {
 					break
 				}
 
-				err = j.db_w.AddBan(entry.IP, rule.BanTime)
+				err = j.db_w.AddBan(entry.IP, rule.BanTime, rule.Name)
 				if err != nil {
 					j.logger.Error(
 						"Failed to add ban to database",

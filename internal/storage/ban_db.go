@@ -41,7 +41,7 @@ func (d *BanWriter) CreateTable() error {
 	return nil
 }
 
-func (d *BanWriter) AddBan(ip string, ttl string) error {
+func (d *BanWriter) AddBan(ip string, ttl string, reason string) error {
 	duration, err := config.ParseDurationWithYears(ttl)
 	if err != nil {
 		d.logger.Error("Invalid duration format", "ttl", ttl, "error", err)
@@ -54,7 +54,7 @@ func (d *BanWriter) AddBan(ip string, ttl string) error {
 	_, err = d.db.Exec(
 		"INSERT INTO bans (ip, reason, banned_at, expired_at) VALUES (?, ?, ?, ?)",
 		ip,
-		"1",
+		reason,
 		now.Format(time.RFC3339),
 		expiredAt.Format(time.RFC3339),
 	)
