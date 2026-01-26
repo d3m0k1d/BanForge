@@ -180,8 +180,8 @@ func (d *BanReader) BanList() error {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(table.StyleBold)
-	t.AppendHeader(table.Row{"№", "IP", "Banned At"})
-	rows, err := d.db.Query("SELECT ip, banned_at  FROM bans")
+	t.AppendHeader(table.Row{"№", "IP", "Banned At", "Reason", "Expires At"})
+	rows, err := d.db.Query("SELECT ip, banned_at, reason, expired_at  FROM bans")
 	if err != nil {
 		d.logger.Error("Failed to get ban list", "error", err)
 		return err
@@ -190,12 +190,14 @@ func (d *BanReader) BanList() error {
 		count++
 		var ip string
 		var bannedAt string
-		err := rows.Scan(&ip, &bannedAt)
+		var reason string
+		var expiredAt string
+		err := rows.Scan(&ip, &bannedAt, &reason, &expiredAt)
 		if err != nil {
 			d.logger.Error("Failed to get ban list", "error", err)
 			return err
 		}
-		t.AppendRow(table.Row{count, ip, bannedAt})
+		t.AppendRow(table.Row{count, ip, bannedAt, reason, expiredAt})
 
 	}
 	t.Render()
