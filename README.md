@@ -32,15 +32,79 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - ufw/iptables/nftables/firewalld
 
 # Installation
-Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it. Then create or copy(/build dir) a systemd unit(openrc script) file.
-Or clone the repo and use the Makefile.
-```
-git clone https://gitea.d3m0k1d.ru/d3m0k1d/BanForge.git
-cd BanForge
-sudo make build-daemon
-cd bin
+Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it.
+In release page you can find rpm, deb, apk packages, for amd or arm architecture.
+
+## Installation guide for packages
+
+### Debian/Ubuntu(.deb)
+```bash
+# Download the latest DEB package
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.deb
+
+# Install
+sudo dpkg -i banforge_0.4.0_linux_amd64.deb
+
+# Verify installation
+sudo systemctl status banforge
 ```
 
+### RHEL-based(.rpm)
+```bash
+
+# Download
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.rpm
+
+# Install
+sudo rpm -i banforge_0.4.0_linux_amd64.rpm
+
+# Or with dnf (CentOS 8+, AlmaLinux)
+sudo dnf install banforge_0.4.0_linux_amd64.rpm
+
+# Verify
+sudo systemctl status banforge
+```
+
+### Alpine(.apk)
+```bash
+
+# Download
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.apk
+
+# Install
+sudo apk add --allow-untrusted banforge_0.4.0_linux_amd64.apk
+
+# Verify
+sudo rc-service banforge status
+```
+
+### Arch Linux(.pkg.tar.zst)
+```bash
+
+# Download
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.pkg.tar.zst
+
+# Install
+sudo pacman -U banforge_0.4.0_linux_amd64.pkg.tar.zst
+
+# Verify
+sudo systemctl status banforge
+```
+This is examples for other versions with different architecture or new versions check release page on [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases).
+
+## Installation guide for source code
+```bash
+# Download
+git clone https://github.com/d3m0k1d/BanForge.git
+cd BanForge
+make build-daemon
+cd bin
+mv banforge /usr/bin/banforge
+cd ..
+# Add init script and uses banforge init
+cd build
+./postinstall.sh
+```
 # Usage
 For first steps use this commands
 ```bash
