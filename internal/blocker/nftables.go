@@ -26,7 +26,7 @@ func (n *Nftables) Ban(ip string) error {
 		return err
 	}
 
-	cmd := exec.Command("sudo", "nft", "add", "rule", "inet", "banforge", "banned",
+	cmd := exec.Command("nft", "add", "rule", "inet", "banforge", "banned",
 		"ip", "saddr", ip, "drop")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -70,7 +70,7 @@ func (n *Nftables) Unban(ip string) error {
 		return fmt.Errorf("no rule found for IP %s", ip)
 	}
 	// #nosec G204 - handle is extracted from nftables output and validated
-	cmd := exec.Command("sudo", "nft", "delete", "rule", "inet", "banforge", "banned",
+	cmd := exec.Command("nft", "delete", "rule", "inet", "banforge", "banned",
 		"handle", handle)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -112,7 +112,7 @@ func (n *Nftables) Setup(config string) error {
 	}
 }
 `
-	cmd := exec.Command("sudo", "tee", config)
+	cmd := exec.Command("tee", config)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdin pipe: %w", err)
@@ -135,7 +135,7 @@ func (n *Nftables) Setup(config string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	cmd = exec.Command("sudo", "nft", "-f", config)
+	cmd = exec.Command("nft", "-f", config)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to load nftables config: %s", string(output))
@@ -145,7 +145,7 @@ func (n *Nftables) Setup(config string) error {
 }
 
 func (n *Nftables) findRuleHandle(ip string) (string, error) {
-	cmd := exec.Command("sudo", "nft", "-a", "list", "chain", "inet", "banforge", "banned")
+	cmd := exec.Command("nft", "-a", "list", "chain", "inet", "banforge", "banned")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to list chain rules: %w", err)
@@ -172,13 +172,13 @@ func saveNftablesConfig(configPath string) error {
 		return err
 	}
 
-	cmd := exec.Command("sudo", "nft", "list", "ruleset")
+	cmd := exec.Command("nft", "list", "ruleset")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to get nftables ruleset: %w", err)
 	}
 
-	cmd = exec.Command("sudo", "tee", configPath)
+	cmd = exec.Command("tee", configPath)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdin pipe: %w", err)

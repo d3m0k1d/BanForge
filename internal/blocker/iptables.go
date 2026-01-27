@@ -27,7 +27,7 @@ func (f *Iptables) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP")
+	cmd := exec.Command("iptables", "-A", "INPUT", "-s", ip, "-j", "DROP")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error("failed to ban IP",
@@ -45,7 +45,7 @@ func (f *Iptables) Ban(ip string) error {
 		return err
 	}
 	// #nosec G204 - f.config is validated above via validateConfigPath()
-	cmd = exec.Command("sudo", "iptables-save", "-f", f.config)
+	cmd = exec.Command("iptables-save", "-f", f.config)
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error("failed to save config",
@@ -69,7 +69,7 @@ func (f *Iptables) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP")
+	cmd := exec.Command("iptables", "-D", "INPUT", "-s", ip, "-j", "DROP")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error("failed to unban IP",
@@ -87,7 +87,7 @@ func (f *Iptables) Unban(ip string) error {
 		return err
 	}
 	// #nosec G204 - f.config is validated above via validateConfigPath()
-	cmd = exec.Command("sudo", "iptables-save", "-f", f.config)
+	cmd = exec.Command("iptables-save", "-f", f.config)
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error("failed to save config",

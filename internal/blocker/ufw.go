@@ -23,7 +23,7 @@ func (u *Ufw) Ban(ip string) error {
 		return err
 	}
 
-	cmd := exec.Command("sudo", "ufw", "--force", "deny", "from", ip)
+	cmd := exec.Command("ufw", "--force", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		u.logger.Error("failed to ban IP",
@@ -42,7 +42,7 @@ func (u *Ufw) Unban(ip string) error {
 		return err
 	}
 
-	cmd := exec.Command("sudo", "ufw", "--force", "delete", "deny", "from", ip)
+	cmd := exec.Command("ufw", "--force", "delete", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		u.logger.Error("failed to unban IP",
@@ -59,7 +59,7 @@ func (u *Ufw) Unban(ip string) error {
 func (u *Ufw) Setup(config string) error {
 	if config != "" {
 		fmt.Printf("Ufw dont support config file\n")
-		cmd := exec.Command("sudo", "ufw", "enable")
+		cmd := exec.Command("ufw", "enable")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			u.logger.Error("failed to enable ufw",
@@ -69,7 +69,7 @@ func (u *Ufw) Setup(config string) error {
 		}
 	}
 	if config == "" {
-		cmd := exec.Command("sudo", "ufw", "enable")
+		cmd := exec.Command("ufw", "enable")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			u.logger.Error("failed to enable ufw",

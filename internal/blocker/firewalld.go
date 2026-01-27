@@ -21,14 +21,14 @@ func (f *Firewalld) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("sudo", "firewall-cmd", "--zone=drop", "--add-source", ip, "--permanent")
+	cmd := exec.Command("firewall-cmd", "--zone=drop", "--add-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
 	}
 	f.logger.Info("Add source " + ip + " " + string(output))
-	output, err = exec.Command("sudo", "firewall-cmd", "--reload").CombinedOutput()
+	output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
@@ -42,14 +42,14 @@ func (f *Firewalld) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("sudo", "firewall-cmd", "--zone=drop", "--remove-source", ip, "--permanent")
+	cmd := exec.Command("firewall-cmd", "--zone=drop", "--remove-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
 	}
 	f.logger.Info("Remove source " + ip + " " + string(output))
-	output, err = exec.Command("sudo", "firewall-cmd", "--reload").CombinedOutput()
+	output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
