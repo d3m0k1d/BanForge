@@ -112,6 +112,11 @@ var DaemonCmd = &cobra.Command{
 						ssh := parser.NewSshdParser()
 						ssh.Parse(p.Events(), entryCh)
 					}
+					if svc.Name == "apache" {
+						log.Info("Starting apache parser", "service", serviceName)
+						ap := parser.NewApacheParser()
+						ap.Parse(p.Events(), entryCh)
+					}
 				}(pars, svc.Name)
 				continue
 			}
@@ -138,7 +143,11 @@ var DaemonCmd = &cobra.Command{
 						log.Info("Starting ssh parser", "service", serviceName)
 						ssh := parser.NewSshdParser()
 						ssh.Parse(p.Events(), resultCh)
-
+					}
+					if svc.Name == "apache" {
+						log.Info("Starting apache parser", "service", serviceName)
+						ap := parser.NewApacheParser()
+						ap.Parse(p.Events(), resultCh)
 					}
 
 				}(pars, svc.Name)
