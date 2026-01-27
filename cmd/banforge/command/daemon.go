@@ -136,18 +136,18 @@ var DaemonCmd = &cobra.Command{
 					if svc.Name == "nginx" {
 						log.Info("Starting nginx parser", "service", serviceName)
 						ng := parser.NewNginxParser()
-						ng.Parse(p.Events(), resultCh)
+						ng.Parse(p.Events(), entryCh)
 
 					}
 					if svc.Name == "ssh" {
 						log.Info("Starting ssh parser", "service", serviceName)
 						ssh := parser.NewSshdParser()
-						ssh.Parse(p.Events(), resultCh)
+						ssh.Parse(p.Events(), entryCh)
 					}
 					if svc.Name == "apache" {
 						log.Info("Starting apache parser", "service", serviceName)
 						ap := parser.NewApacheParser()
-						ap.Parse(p.Events(), resultCh)
+						ap.Parse(p.Events(), entryCh)
 					}
 
 				}(pars, svc.Name)
