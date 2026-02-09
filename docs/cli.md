@@ -11,6 +11,16 @@ banforge init
 **Description**
 This command creates the necessary directories and base configuration files 
 required for the daemon to operate.
+
+### version - Display BanForge version
+
+```shell
+banforge version
+```
+
+**Description**
+This command displays the current version of the BanForge software.
+
 ### daemon - Starts the BanForge daemon process
 
 ```shell
@@ -32,6 +42,17 @@ banforge unban <ip>
 These commands provide an abstraction over your firewall. If you want to simplify the interface to your firewall, you can use these commands.
 
 Flag -t or -ttl add bantime if not used default ban 1 year
+
+### ports - Open and Close ports on firewall
+
+```shell
+banforge open -port <port> -protocol <protocol>
+banforge close -port <port> -protocol <protocol>
+```
+
+**Description**
+These commands provide an abstraction over your firewall. If you want to simplify the interface to your firewall, you can use these commands.
+
 ### list - Lists the IP addresses that are currently blocked
 ```shell
 banforge list
