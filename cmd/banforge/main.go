@@ -13,7 +13,6 @@ var rootCmd = &cobra.Command{
 	Use:   "banforge",
 	Short: "IPS log-based written on Golang",
 	Run: func(cmd *cobra.Command, args []string) {
-
 	},
 }
 
@@ -28,6 +27,7 @@ func Execute() {
 	rootCmd.AddCommand(command.BanCmd)
 	rootCmd.AddCommand(command.UnbanCmd)
 	rootCmd.AddCommand(command.BanListCmd)
+	rootCmd.AddCommand(command.VersionCmd)
 	command.RuleRegister()
 	command.FwRegister()
 	if err := rootCmd.Execute(); err != nil {

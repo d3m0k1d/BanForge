@@ -102,6 +102,14 @@ func (f *Iptables) Unban(ip string) error {
 	return nil
 }
 
+func (f *Iptables) PortOpen(port int) error {
+	return nil
+}
+
+func (f *Iptables) PortClose(port int) error {
+	return nil
+}
+
 func (f *Iptables) Setup(config string) error {
 	return nil
 }

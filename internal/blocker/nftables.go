@@ -166,6 +166,14 @@ func (n *Nftables) findRuleHandle(ip string) (string, error) {
 	return "", nil
 }
 
+func (n *Nftables) PortOpen(port int) error {
+	return nil
+}
+
+func (n *Nftables) PortClose(port int) error {
+	return nil
+}
+
 func saveNftablesConfig(configPath string) error {
 	err := validateConfigPath(configPath)
 	if err != nil {

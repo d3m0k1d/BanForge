@@ -56,6 +56,14 @@ func (u *Ufw) Unban(ip string) error {
 	return nil
 }
 
+func (u *Ufw) PortOpen(port int) error {
+	return nil
+}
+
+func (u *Ufw) PortClose(port int) error {
+	return nil
+}
+
 func (u *Ufw) Setup(config string) error {
 	if config != "" {
 		fmt.Printf("Ufw dont support config file\n")

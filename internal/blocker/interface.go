@@ -10,6 +10,8 @@ type BlockerEngine interface {
 	Ban(ip string) error
 	Unban(ip string) error
 	Setup(config string) error
+	PortOpen(port int) error
+	PortClose(port int) error
 }
 
 func GetBlocker(fw string, config string) BlockerEngine {

@@ -2,6 +2,7 @@ package blocker
 
 import (
 	"os/exec"
+	"strconv"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
 )
@@ -55,6 +56,31 @@ func (f *Firewalld) Unban(ip string) error {
 		return err
 	}
 	f.logger.Info("Reload " + string(output))
+	return nil
+}
+
+func (f *Firewalld) PortOpen(port int) error {
+	// #nosec G204 - handle is extracted from nftables output and validated
+	if port >= 0 && port <= 65535 {
+		s := strconv.Itoa(port)
+		cmd := exec.Command("firewall-cmd", "--zone=public", "--add-port="+s+"/tcp", "--permanent")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			f.logger.Error(err.Error())
+			return err
+		}
+		f.logger.Info("Add port " + s + " " + string(output))
+		output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
+		if err != nil {
+			f.logger.Error(err.Error())
+			return err
+		}
+		f.logger.Info("Reload " + string(output))
+	}
+	return nil
+}
+
+func (f *Firewalld) PortClose(port int) error {
 	return nil
 }
 
