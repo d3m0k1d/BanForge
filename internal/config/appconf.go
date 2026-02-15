@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -57,13 +58,11 @@ func NewRule(
 		return err
 	}
 	defer func() {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
+		err = errors.Join(err, file.Close())
 	}()
 	cfg := Rules{Rules: r}
 
+	// what if it fails?
 	err = toml.NewEncoder(file).Encode(cfg)
 	if err != nil {
 		return err
