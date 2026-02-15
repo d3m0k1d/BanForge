@@ -175,7 +175,6 @@ func (d *BanReader) IsBanned(ip string) (bool, error) {
 }
 
 func (d *BanReader) BanList() error {
-
 	var count int
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
