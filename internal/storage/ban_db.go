@@ -21,7 +21,7 @@ type BanWriter struct {
 func NewBanWriter() (*BanWriter, error) {
 	db, err := sql.Open(
 		"sqlite",
-		"/var/lib/banforge/bans.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)",
+		buildSqliteDsn(banDBPath, pragmas),
 	)
 	if err != nil {
 		return nil, err
