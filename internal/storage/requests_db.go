@@ -15,7 +15,7 @@ type RequestWriter struct {
 func NewRequestsWr() (*RequestWriter, error) {
 	db, err := sql.Open(
 		"sqlite",
-		"/var/lib/banforge/requests.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)",
+		buildSqliteDsn(ReqDBPath, pragmas),
 	)
 	if err != nil {
 		return nil, err
