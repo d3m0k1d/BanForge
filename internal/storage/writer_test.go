@@ -277,7 +277,7 @@ func TestWrite_ChannelClosed(t *testing.T) {
 	}
 }
 
-func NewRequestWriterWithDBPath(dbPath string) (*Request_Writer, error) {
+func NewRequestWriterWithDBPath(dbPath string) (*RequestWriter, error) {
 	db, err := sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		return nil, err
@@ -285,13 +285,13 @@ func NewRequestWriterWithDBPath(dbPath string) (*Request_Writer, error) {
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0)
-	return &Request_Writer{
+	return &RequestWriter{
 		logger: logger.New(false),
 		db:     db,
 	}, nil
 }
 
-func (w *Request_Writer) CreateTable() error {
+func (w *RequestWriter) CreateTable() error {
 	_, err := w.db.Exec(CreateRequestsTable)
 	if err != nil {
 		return err
@@ -300,7 +300,7 @@ func (w *Request_Writer) CreateTable() error {
 	return nil
 }
 
-func (w *Request_Writer) Close() error {
+func (w *RequestWriter) Close() error {
 	w.logger.Info("Closing request database connection")
 	err := w.db.Close()
 	if err != nil {
@@ -309,7 +309,7 @@ func (w *Request_Writer) Close() error {
 	return nil
 }
 
-func (w *Request_Writer) GetRequestCount() (int, error) {
+func (w *RequestWriter) GetRequestCount() (int, error) {
 	var count int
 	err := w.db.QueryRow("SELECT COUNT(*) FROM requests").Scan(&count)
 	if err != nil {

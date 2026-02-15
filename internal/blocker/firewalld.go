@@ -94,7 +94,6 @@ func (f *Firewalld) PortClose(port int, protocol string) error {
 	// #nosec G204 - handle is extracted from nftables output and validated
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
-			f.logger.Error("invalid protocol")
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
@@ -106,13 +105,11 @@ func (f *Firewalld) PortClose(port int, protocol string) error {
 		)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			f.logger.Error(err.Error())
 			return err
 		}
 		f.logger.Info("Remove port " + s + " " + string(output))
 		output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 		if err != nil {
-			f.logger.Error(err.Error())
 			return err
 		}
 		f.logger.Info("Reload " + string(output))

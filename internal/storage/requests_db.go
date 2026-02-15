@@ -7,15 +7,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type Request_Writer struct {
+type RequestWriter struct {
 	logger *logger.Logger
 	db     *sql.DB
 }
 
-func NewRequestsWr() (*Request_Writer, error) {
+func NewRequestsWr() (*RequestWriter, error) {
 	db, err := sql.Open(
 		"sqlite",
-		"/var/lib/banforge/requests.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(30000)&_pragma=synchronous(NORMAL)",
+		buildSqliteDsn(ReqDBPath, pragmas),
 	)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func NewRequestsWr() (*Request_Writer, error) {
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0)
-	return &Request_Writer{
+	return &RequestWriter{
 		logger: logger.New(false),
 		db:     db,
 	}, nil
