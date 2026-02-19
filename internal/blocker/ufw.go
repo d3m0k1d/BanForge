@@ -23,7 +23,7 @@ func (u *Ufw) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
-
+	// #nosec G204 - ip is validated
 	cmd := exec.Command("ufw", "--force", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -42,7 +42,7 @@ func (u *Ufw) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
-
+	// #nosec G204 - ip is validated
 	cmd := exec.Command("ufw", "--force", "delete", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

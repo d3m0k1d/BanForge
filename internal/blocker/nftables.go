@@ -113,6 +113,7 @@ func (n *Nftables) Setup(config string) error {
 	}
 }
 `
+	// #nosec G204 - config is managed by adminstartor
 	cmd := exec.Command("tee", config)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -135,7 +136,7 @@ func (n *Nftables) Setup(config string) error {
 	if err = cmd.Wait(); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
-
+	// #nosec G204 - config is managed by adminstartor
 	cmd = exec.Command("nft", "-f", config)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
