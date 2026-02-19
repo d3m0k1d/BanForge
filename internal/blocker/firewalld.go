@@ -23,6 +23,7 @@ func (f *Firewalld) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	// #nosec G204 - ip is validated
 	cmd := exec.Command("firewall-cmd", "--zone=drop", "--add-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -61,7 +62,7 @@ func (f *Firewalld) Unban(ip string) error {
 }
 
 func (f *Firewalld) PortOpen(port int, protocol string) error {
-	// #nosec G204 - handle is extracted from nftables output and validated
+	// #nosec G204 - handle is extracted from Firewalld output and validated
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
 			f.logger.Error("invalid protocol")

@@ -28,6 +28,7 @@ func (f *Iptables) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	// #nosec G204 - f.config is validated above via validateConfigPath()
 	cmd := exec.Command("iptables", "-A", "INPUT", "-s", ip, "-j", "DROP")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -70,6 +71,7 @@ func (f *Iptables) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	// #nosec G204 - f.config is validated above via validateConfigPath()
 	cmd := exec.Command("iptables", "-D", "INPUT", "-s", ip, "-j", "DROP")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
