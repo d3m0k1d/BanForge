@@ -26,7 +26,7 @@ func (n *Nftables) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
-
+	// #nosec G204 - ip is validated
 	cmd := exec.Command("nft", "add", "rule", "inet", "banforge", "banned",
 		"ip", "saddr", ip, "drop")
 	output, err := cmd.CombinedOutput()
@@ -253,7 +253,7 @@ func saveNftablesConfig(configPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get nftables ruleset: %w", err)
 	}
-
+	// #nosec G204 - managed by system adminstartor
 	cmd = exec.Command("tee", configPath)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

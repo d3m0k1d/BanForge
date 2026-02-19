@@ -45,6 +45,7 @@ func (f *Firewalld) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	// #nosec G204 - ip is validated
 	cmd := exec.Command("firewall-cmd", "--zone=drop", "--remove-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
