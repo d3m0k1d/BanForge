@@ -24,6 +24,7 @@ type Scanner struct {
 }
 
 func NewScannerTail(path string) (*Scanner, error) {
+	// #nosec G204 - managed by system adminstartor
 	cmd := exec.Command("tail", "-F", "-n", "10", path)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -46,6 +47,7 @@ func NewScannerTail(path string) (*Scanner, error) {
 }
 
 func NewScannerJournald(unit string) (*Scanner, error) {
+	// #nosec G204 - managed by system adminstartor
 	cmd := exec.Command("journalctl", "-u", unit, "-f", "-n", "0", "-o", "short", "--no-pager")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
