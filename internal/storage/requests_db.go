@@ -52,20 +52,11 @@ func NewRequestsRd() (*RequestReader, error) {
 }
 
 func (r *RequestReader) IsMaxRetryExceeded(ip string, max_retry int) (bool, error) {
-	row, err := r.db.Query("SELECT COUNT(*) FROM requests WHERE ip = ?", ip)
+	var count int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM requests WHERE ip = ?", ip).Scan(&count)
 	if err != nil {
-		r.logger.Error("error scan" + err.Error())
+		r.logger.Error("error query count: " + err.Error())
 		return false, err
 	}
-	if row.Next() {
-		var count int
-		if err := row.Scan(&count); err != nil {
-			r.logger.Error("error scan" + err.Error())
-			return false, err
-		}
-		if count >= max_retry {
-			return true, nil
-		}
-	}
-	return true, nil
+	return count >= max_retry, nil
 }
