@@ -94,3 +94,13 @@ func WriteReq(db *RequestWriter, resultCh <-chan *LogEntry) {
 		}
 	}
 }
+
+func (w *RequestWriter) GetRequestCount() (int, error) {
+	var count int
+	err := w.db.QueryRow("SELECT COUNT(*) FROM requests").Scan(&count)
+	return count, err
+}
+
+func (w *RequestWriter) Close() error {
+	return w.db.Close()
+}
