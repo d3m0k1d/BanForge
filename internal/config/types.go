@@ -28,5 +28,6 @@ type Rule struct {
 	Path        string `toml:"path"`
 	Status      string `toml:"status"`
 	Method      string `toml:"method"`
+	MaxRetry    int    `toml:"max_retry"`
 	BanTime     string `toml:"ban_time"`
 }

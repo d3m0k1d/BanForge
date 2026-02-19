@@ -299,21 +299,3 @@ func (w *RequestWriter) CreateTable() error {
 	w.logger.Info("Created requests table")
 	return nil
 }
-
-func (w *RequestWriter) Close() error {
-	w.logger.Info("Closing request database connection")
-	err := w.db.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (w *RequestWriter) GetRequestCount() (int, error) {
-	var count int
-	err := w.db.QueryRow("SELECT COUNT(*) FROM requests").Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}

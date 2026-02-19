@@ -76,14 +76,6 @@ func (j *Judge) Tribunal() {
 			statusMatch := rule.Status == "" || entry.Status == rule.Status
 			pathMatch := matchPath(entry.Path, rule.Path)
 
-			j.logger.Debug(
-				"Testing rule",
-				"rule", rule.Name,
-				"method_match", methodMatch,
-				"status_match", statusMatch,
-				"path_match", pathMatch,
-			)
-
 			if methodMatch && statusMatch && pathMatch {
 				ruleMatched = true
 				j.logger.Info("Rule matched", "rule", rule.Name, "ip", entry.IP)
@@ -93,7 +85,6 @@ func (j *Judge) Tribunal() {
 					j.logger.Error("Failed to check ban status", "ip", entry.IP, "error", err)
 					break
 				}
-
 				if banned {
 					j.logger.Info("IP already banned", "ip", entry.IP)
 					j.resultCh <- entry
