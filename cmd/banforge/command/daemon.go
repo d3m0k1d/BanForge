@@ -60,6 +60,11 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load config", "error", err)
 			os.Exit(1)
 		}
+		_, err = config.LoadMetricsConfig()
+		if err != nil {
+			log.Error("Failed to load metrics config", "error", err)
+			os.Exit(1)
+		}
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name
 		b = blocker.GetBlocker(fw, cfg.Firewall.Config)

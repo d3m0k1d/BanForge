@@ -3,14 +3,30 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/BurntSushi/toml"
+	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/BurntSushi/toml"
-	"github.com/d3m0k1d/BanForge/internal/logger"
 )
+
+func LoadMetricsConfig() (*Metrics, error) {
+	cfg := &Metrics{}
+	_, err := toml.DecodeFile("/etc/banforge/config.toml", cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode config: %w", err)
+	}
+
+	if cfg.Enabled && cfg.Port > 0 && cfg.Port < 65535 {
+		go metrics.StartMetricsServer(cfg.Port)
+	} else if cfg.Enabled {
+		fmt.Println("Metrics enabled but port invalid, not starting server")
+	}
+
+	return cfg, nil
+}
 
 func LoadRuleConfig() ([]Rule, error) {
 	log := logger.New(false)

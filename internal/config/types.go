@@ -14,6 +14,7 @@ type Service struct {
 
 type Config struct {
 	Firewall Firewall  `toml:"firewall"`
+	Metrics  Metrics   `toml:"metrics"`
 	Service  []Service `toml:"service"`
 }
 
@@ -30,4 +31,9 @@ type Rule struct {
 	Method      string `toml:"method"`
 	MaxRetry    int    `toml:"max_retry"`
 	BanTime     string `toml:"ban_time"`
+}
+
+type Metrics struct {
+	Enabled bool `toml:"enabled"`
+	Port    int  `toml:"port"`
 }

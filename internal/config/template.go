@@ -8,6 +8,10 @@ const Base_config = `
 name = ""
 config = "/etc/nftables.conf"
 
+[metrics]
+enabled = false
+port = 2122
+
 [[service]]
 name = "nginx"
 logging = "file"
