@@ -16,6 +16,24 @@ const (
 	ConfigFile = "config.toml"
 )
 
+func createFileWithPermissions(path string, perm os.FileMode) error {
+	// #nosec G304 - path is controlled by config package not user
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Chmod(path, perm); err != nil {
+		_ = file.Close()
+		return err
+	}
+
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func CreateConf() error {
 	if os.Geteuid() != 0 {
 		return fmt.Errorf("you must be root to run this command, use sudo/doas")
@@ -28,80 +46,49 @@ func CreateConf() error {
 		return nil
 	}
 
-	file, err := os.Create("/etc/banforge/config.toml")
-	if err != nil {
-		return fmt.Errorf("failed to create config file: %w", err)
+	if err := os.MkdirAll(ConfigDir, 0750); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-	defer func() {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-	if err := os.Chmod(configPath, 0600); err != nil {
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
-	err = os.WriteFile(configPath, []byte(Base_config), 0600)
-	if err != nil {
+
+	if err := os.WriteFile(configPath, []byte(Base_config), 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
-	fmt.Printf(" Config file created: %s\n", configPath)
-	file, err = os.Create("/etc/banforge/rules.toml")
-	if err != nil {
-		return fmt.Errorf("failed to create rules file: %w", err)
+	fmt.Printf("Config file created: %s\n", configPath)
+
+	rulesDir := filepath.Join(ConfigDir, "rules.d")
+	if err := os.MkdirAll(rulesDir, 0750); err != nil {
+		return fmt.Errorf("failed to create rules directory: %w", err)
 	}
-	defer func() {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
+	fmt.Printf("Rules directory created: %s\n", rulesDir)
+
+	bansDBDir := filepath.Dir("/var/lib/banforge/bans.db")
+	if err := os.MkdirAll(bansDBDir, 0750); err != nil {
+		return fmt.Errorf("failed to create bans database directory: %w", err)
+	}
+
+	reqDBDir := filepath.Dir("/var/lib/banforge/requests.db")
+	if err := os.MkdirAll(reqDBDir, 0750); err != nil {
+		return fmt.Errorf("failed to create requests database directory: %w", err)
+	}
 
 	bansDBPath := "/var/lib/banforge/bans.db"
-	reqDBPath := "/var/lib/banforge/requests.db"
-
-	file, err = os.Create(bansDBPath)
-	if err != nil {
+	if err := createFileWithPermissions(bansDBPath, 0600); err != nil {
 		return fmt.Errorf("failed to create bans database file: %w", err)
 	}
-	err = os.Chmod(bansDBPath, 0600)
-	if err != nil {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
-	err = file.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close file: %w", err)
-	}
+	fmt.Printf("Bans database file created: %s\n", bansDBPath)
 
-	file, err = os.Create(reqDBPath)
-	if err != nil {
+	reqDBPath := "/var/lib/banforge/requests.db"
+	if err := createFileWithPermissions(reqDBPath, 0600); err != nil {
 		return fmt.Errorf("failed to create requests database file: %w", err)
 	}
-	err = os.Chmod(reqDBPath, 0600)
-	if err != nil {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
-	err = file.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close file: %w", err)
-	}
+	fmt.Printf("Requests database file created: %s\n", reqDBPath)
 
-	fmt.Printf(" Rules file created: %s\n", configPath)
 	return nil
 }
 
 func FindFirewall() error {
-	if os.Getegid() != 0 {
-		fmt.Printf("Firewall settings needs sudo privileges\n")
-		os.Exit(1)
+	if os.Geteuid() != 0 {
+		return fmt.Errorf("firewall settings needs sudo privileges")
 	}
 
 	firewalls := []string{"nft", "firewall-cmd", "iptables", "ufw"}
@@ -134,10 +121,7 @@ func FindFirewall() error {
 
 			encoder := toml.NewEncoder(file)
 			if err := encoder.Encode(cfg); err != nil {
-				err = file.Close()
-				if err != nil {
-					return fmt.Errorf("failed to close file: %w", err)
-				}
+				_ = file.Close()
 				return fmt.Errorf("failed to encode config: %w", err)
 			}
 

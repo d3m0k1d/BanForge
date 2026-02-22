@@ -16,53 +16,11 @@ var InitCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Initializing BanForge...")
 
-		if _, err := os.Stat("/var/log/banforge"); err == nil {
-			fmt.Println("/var/log/banforge already exists, skipping...")
-		} else if os.IsNotExist(err) {
-			err := os.Mkdir("/var/log/banforge", 0750)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Println("Created /var/log/banforge")
-		} else {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		if _, err := os.Stat("/var/lib/banforge"); err == nil {
-			fmt.Println("/var/lib/banforge already exists, skipping...")
-		} else if os.IsNotExist(err) {
-			err := os.Mkdir("/var/lib/banforge", 0750)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Println("Created /var/lib/banforge")
-		} else {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		if _, err := os.Stat("/etc/banforge"); err == nil {
-			fmt.Println("/etc/banforge already exists, skipping...")
-		} else if os.IsNotExist(err) {
-			err := os.Mkdir("/etc/banforge", 0750)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Println("Created /etc/banforge")
-		} else {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
 		err := config.CreateConf()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Println("Config created")
 
 		err = config.FindFirewall()
 		if err != nil {

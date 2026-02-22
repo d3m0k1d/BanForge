@@ -32,7 +32,6 @@ func LoadMetricsConfig() (*Metrics, error) {
 func LoadRuleConfig() ([]Rule, error) {
 	log := logger.New(false)
 	var cfg Rules
-
 	_, err := toml.DecodeFile("/etc/banforge/rules.toml", &cfg)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to decode config: %v", err))
