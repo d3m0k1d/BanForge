@@ -2,8 +2,12 @@ package parser
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
@@ -23,8 +27,56 @@ type Scanner struct {
 	pollDelay time.Duration
 }
 
+func validateLogPath(path string) error {
+	if path == "" {
+		return fmt.Errorf("log path cannot be empty")
+	}
+
+	if !filepath.IsAbs(path) {
+		return fmt.Errorf("log path must be absolute: %s", path)
+	}
+
+	if strings.Contains(path, "..") {
+		return fmt.Errorf("log path contains '..': %s", path)
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("log file does not exist: %s", path)
+	}
+
+	info, err := os.Lstat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat log file: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("log path is a symlink: %s", path)
+	}
+
+	return nil
+}
+
+func validateJournaldUnit(unit string) error {
+	if unit == "" {
+		return fmt.Errorf("journald unit cannot be empty")
+	}
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9._-]+$`).MatchString(unit) {
+		return fmt.Errorf("invalid journald unit name: %s", unit)
+	}
+
+	if strings.HasPrefix(unit, "-") {
+		return fmt.Errorf("journald unit cannot start with '-': %s", unit)
+	}
+
+	return nil
+}
+
 func NewScannerTail(path string) (*Scanner, error) {
-	// #nosec G204 - managed by system adminstartor
+	if err := validateLogPath(path); err != nil {
+		return nil, fmt.Errorf("invalid log path: %w", err)
+	}
+
+	// #nosec G204 - path is validated above via validateLogPath()
 	cmd := exec.Command("tail", "-F", "-n", "10", path)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -47,7 +99,11 @@ func NewScannerTail(path string) (*Scanner, error) {
 }
 
 func NewScannerJournald(unit string) (*Scanner, error) {
-	// #nosec G204 - managed by system adminstartor
+	if err := validateJournaldUnit(unit); err != nil {
+		return nil, fmt.Errorf("invalid journald unit: %w", err)
+	}
+
+	// #nosec G204 - unit is validated above via validateJournaldUnit()
 	cmd := exec.Command("journalctl", "-u", unit, "-f", "-n", "0", "-o", "short", "--no-pager")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

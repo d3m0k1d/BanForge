@@ -24,30 +24,28 @@ func NewSshdParser() *SshdParser {
 
 func (p *SshdParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogEntry) {
 	// Group 1: Timestamp, Group 2: hostame, Group 3: pid, Group 4: Method auth, Group 5: User, Group 6: IP, Group 7: port
-	go func() {
-		for event := range eventCh {
-			matches := p.pattern.FindStringSubmatch(event.Data)
-			if matches == nil {
-				continue
-			}
-			resultCh <- &storage.LogEntry{
-				Service: "ssh",
-				IP:      matches[6],
-				Path:    matches[5], // user
-				Status:  "Failed",
-				Method:  matches[4], // method auth
-			}
-			p.logger.Info(
-				"Parsed ssh log entry",
-				"ip",
-				matches[6],
-				"user",
-				matches[5],
-				"method",
-				matches[4],
-				"status",
-				"Failed",
-			)
+	for event := range eventCh {
+		matches := p.pattern.FindStringSubmatch(event.Data)
+		if matches == nil {
+			continue
 		}
-	}()
+		resultCh <- &storage.LogEntry{
+			Service: "ssh",
+			IP:      matches[6],
+			Path:    matches[5], // user
+			Status:  "Failed",
+			Method:  matches[4], // method auth
+		}
+		p.logger.Info(
+			"Parsed ssh log entry",
+			"ip",
+			matches[6],
+			"user",
+			matches[5],
+			"method",
+			matches[4],
+			"status",
+			"Failed",
+		)
+	}
 }

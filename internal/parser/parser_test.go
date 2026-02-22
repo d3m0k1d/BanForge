@@ -2,6 +2,7 @@ package parser
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -279,5 +280,203 @@ func BenchmarkScanner(b *testing.B) {
 		f.Sync()
 		f.Close()
 		<-scanner.Events()
+	}
+}
+
+func TestValidateLogPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		setup   func() (string, func())
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "empty path",
+			path:    "",
+			wantErr: true,
+			errMsg:  "log path cannot be empty",
+		},
+		{
+			name:    "relative path",
+			path:    "logs/test.log",
+			wantErr: true,
+			errMsg:  "log path must be absolute",
+		},
+		{
+			name:    "path with traversal",
+			path:    "/var/log/../etc/passwd",
+			wantErr: true,
+			errMsg:  "log path contains '..'",
+		},
+		{
+			name:    "non-existent file",
+			path:    "/var/log/nonexistent.log",
+			wantErr: true,
+			errMsg:  "log file does not exist",
+		},
+		{
+			name: "valid file",
+			path: "/tmp/test-valid.log",
+			setup: func() (string, func()) {
+				_, _ = os.Create("/tmp/test-valid.log")
+				return "/tmp/test-valid.log", func() { os.Remove("/tmp/test-valid.log") }
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var cleanup func()
+			if tt.setup != nil {
+				tt.path, cleanup = tt.setup()
+				defer cleanup()
+			}
+
+			err := validateLogPath(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateLogPath() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && tt.errMsg != "" && err != nil {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("validateLogPath() error = %v, want message containing %q", err, tt.errMsg)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateJournaldUnit(t *testing.T) {
+	tests := []struct {
+		name    string
+		unit    string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "empty unit",
+			unit:    "",
+			wantErr: true,
+			errMsg:  "journald unit cannot be empty",
+		},
+		{
+			name:    "unit starting with dash",
+			unit:    "-dangerous",
+			wantErr: true,
+			errMsg:  "journald unit cannot start with '-'",
+		},
+		{
+			name:    "unit with special chars",
+			unit:    "test;rm -rf /",
+			wantErr: true,
+			errMsg:  "invalid journald unit name",
+		},
+		{
+			name:    "unit with spaces",
+			unit:    "test unit",
+			wantErr: true,
+			errMsg:  "invalid journald unit name",
+		},
+		{
+			name:    "valid unit simple",
+			unit:    "nginx",
+			wantErr: false,
+		},
+		{
+			name:    "valid unit with dash",
+			unit:    "ssh-agent",
+			wantErr: false,
+		},
+		{
+			name:    "valid unit with dot",
+			unit:    "systemd-journald.service",
+			wantErr: false,
+		},
+		{
+			name:    "valid unit with underscore",
+			unit:    "my_service",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateJournaldUnit(tt.unit)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateJournaldUnit() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && tt.errMsg != "" && err != nil {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("validateJournaldUnit() error = %v, want message containing %q", err, tt.errMsg)
+				}
+			}
+		})
+	}
+}
+
+func TestNewScannerTailValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+	}{
+		{
+			name:    "empty path",
+			path:    "",
+			wantErr: true,
+		},
+		{
+			name:    "relative path",
+			path:    "test.log",
+			wantErr: true,
+		},
+		{
+			name:    "non-existent path",
+			path:    "/nonexistent/path/file.log",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewScannerTail(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewScannerTail() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNewScannerJournaldValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		unit    string
+		wantErr bool
+	}{
+		{
+			name:    "empty unit",
+			unit:    "",
+			wantErr: true,
+		},
+		{
+			name:    "unit with semicolon",
+			unit:    "test;rm -rf /",
+			wantErr: true,
+		},
+		{
+			name:    "unit starting with dash",
+			unit:    "-dangerous",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewScannerJournald(tt.unit)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewScannerJournald() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
