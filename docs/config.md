@@ -40,6 +40,7 @@ Example:
   service = "nginx"
   path = ""
   status = "304"
+  max_retry = 3
   method = ""
   ban_time = "1m"
 ```
