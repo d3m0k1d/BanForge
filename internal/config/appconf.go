@@ -3,13 +3,14 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/d3m0k1d/BanForge/internal/logger"
-	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 func LoadMetricsConfig() (*Metrics, error) {
