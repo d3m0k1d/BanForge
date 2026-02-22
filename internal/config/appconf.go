@@ -33,6 +33,7 @@ func NewRule(
 	Status string,
 	Method string,
 	ttl string,
+	max_retry int,
 ) error {
 	r, err := LoadRuleConfig()
 	if err != nil {
@@ -51,6 +52,7 @@ func NewRule(
 			Status:      Status,
 			Method:      Method,
 			BanTime:     ttl,
+			MaxRetry:    max_retry,
 		},
 	)
 	file, err := os.Create("/etc/banforge/rules.toml")

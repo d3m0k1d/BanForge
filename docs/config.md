@@ -47,4 +47,5 @@ Example:
 **Description**
 The [[rule]] section require name and one of the following parameters: service, path, status, method. To add a rule, create a [[rule]] block and specify the parameters.
 ban_time require in format "1m", "1h", "1d", "1M", "1y".
-If you want to ban all requests to PHP files (e.g., path = "*.php") or requests to the admin panel (e.g., path = "/admin/*")
+If you want to ban all requests to PHP files (e.g., path = "*.php") or requests to the admin panel (e.g., path = "/admin/*").
+If max_retry = 0 ban on first request.

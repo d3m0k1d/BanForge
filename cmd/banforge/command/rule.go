@@ -9,12 +9,13 @@ import (
 )
 
 var (
-	name    string
-	service string
-	path    string
-	status  string
-	method  string
-	ttl     string
+	name      string
+	service   string
+	path      string
+	status    string
+	method    string
+	ttl       string
+	max_retry int
 )
 
 var RuleCmd = &cobra.Command{
@@ -41,7 +42,7 @@ var AddCmd = &cobra.Command{
 		if ttl == "" {
 			ttl = "1y"
 		}
-		err := config.NewRule(name, service, path, status, method, ttl)
+		err := config.NewRule(name, service, path, status, method, ttl, max_retry)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -82,4 +83,5 @@ func RuleRegister() {
 	AddCmd.Flags().StringVarP(&status, "status", "c", "", "status code")
 	AddCmd.Flags().StringVarP(&method, "method", "m", "", "method")
 	AddCmd.Flags().StringVarP(&ttl, "ttl", "t", "", "ban time")
+	AddCmd.Flags().IntVarP(&max_retry, "max_retry", "r", 0, "max retry")
 }
