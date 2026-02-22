@@ -75,4 +75,3 @@ func StartMetricsServer(port int) {
 		log.Printf("Metrics server error: %v", err)
 	}
 }
-
