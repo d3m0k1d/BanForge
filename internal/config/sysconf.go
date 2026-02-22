@@ -50,23 +50,50 @@ func CreateConf() error {
 	if err != nil {
 		return fmt.Errorf("failed to create rules file: %w", err)
 	}
-	file, err = os.Create("/var/lib/banforge/storage.db")
-	if err != nil {
-		return fmt.Errorf("failed to create database file: %w", err)
-	}
-	err = os.Chmod("/var/lib/banforge/storage.db", 0600)
-	if err != nil {
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
 	defer func() {
 		err = file.Close()
 		if err != nil {
 			fmt.Println(err)
 		}
 	}()
-	if err := os.Chmod(configPath, 0600); err != nil {
+
+	bansDBPath := "/var/lib/banforge/bans.db"
+	reqDBPath := "/var/lib/banforge/requests.db"
+
+	file, err = os.Create(bansDBPath)
+	if err != nil {
+		return fmt.Errorf("failed to create bans database file: %w", err)
+	}
+	err = os.Chmod(bansDBPath, 0600)
+	if err != nil {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
+	err = file.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close file: %w", err)
+	}
+
+	file, err = os.Create(reqDBPath)
+	if err != nil {
+		return fmt.Errorf("failed to create requests database file: %w", err)
+	}
+	err = os.Chmod(reqDBPath, 0600)
+	if err != nil {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+		return fmt.Errorf("failed to set permissions: %w", err)
+	}
+	err = file.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close file: %w", err)
+	}
+
 	fmt.Printf(" Rules file created: %s\n", configPath)
 	return nil
 }
