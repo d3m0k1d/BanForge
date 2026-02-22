@@ -30,6 +30,11 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to create request writer", "error", err)
 			os.Exit(1)
 		}
+		reqDb_r, err := storage.NewRequestsRd()
+		if err != nil {
+			log.Error("Failed to create request reader", "error", err)
+			os.Exit(1)
+		}
 		banDb_r, err := storage.NewBanReader()
 		if err != nil {
 			log.Error("Failed to create ban reader", "error", err)
@@ -63,7 +68,7 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load rules", "error", err)
 			os.Exit(1)
 		}
-		j := judge.New(banDb_r, banDb_w, b, resultCh, entryCh)
+		j := judge.New(banDb_r, banDb_w, reqDb_r, b, resultCh, entryCh)
 		j.LoadRules(r)
 		go j.UnbanChecker()
 		go j.Tribunal()

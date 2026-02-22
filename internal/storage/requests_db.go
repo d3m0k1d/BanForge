@@ -51,12 +51,13 @@ func NewRequestsRd() (*RequestReader, error) {
 	}, nil
 }
 
-func (r *RequestReader) IsMaxRetryExceeded(ip string, max_retry int) (bool, error) {
+func (r *RequestReader) IsMaxRetryExceeded(ip string, maxRetry int) (bool, error) {
 	var count int
 	err := r.db.QueryRow("SELECT COUNT(*) FROM requests WHERE ip = ?", ip).Scan(&count)
 	if err != nil {
 		r.logger.Error("error query count: " + err.Error())
 		return false, err
 	}
-	return count >= max_retry, nil
+	r.logger.Info("Current request count for IP", "ip", ip, "count", count, "maxRetry", maxRetry)
+	return count >= maxRetry, nil
 }

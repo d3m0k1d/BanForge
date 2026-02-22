@@ -14,6 +14,7 @@ import (
 type Judge struct {
 	db_r           *storage.BanReader
 	db_w           *storage.BanWriter
+	db_rq          *storage.RequestReader
 	logger         *logger.Logger
 	Blocker        blocker.BlockerEngine
 	rulesByService map[string][]config.Rule
@@ -24,6 +25,7 @@ type Judge struct {
 func New(
 	db_r *storage.BanReader,
 	db_w *storage.BanWriter,
+	db_rq *storage.RequestReader,
 	b blocker.BlockerEngine,
 	resultCh chan *storage.LogEntry,
 	entryCh chan *storage.LogEntry,
@@ -31,6 +33,7 @@ func New(
 	return &Judge{
 		db_w:           db_w,
 		db_r:           db_r,
+		db_rq:          db_rq,
 		logger:         logger.New(false),
 		rulesByService: make(map[string][]config.Rule),
 		Blocker:        b,
@@ -75,11 +78,10 @@ func (j *Judge) Tribunal() {
 			methodMatch := rule.Method == "" || entry.Method == rule.Method
 			statusMatch := rule.Status == "" || entry.Status == rule.Status
 			pathMatch := matchPath(entry.Path, rule.Path)
-
 			if methodMatch && statusMatch && pathMatch {
 				ruleMatched = true
 				j.logger.Info("Rule matched", "rule", rule.Name, "ip", entry.IP)
-
+				j.resultCh <- entry
 				banned, err := j.db_r.IsBanned(entry.IP)
 				if err != nil {
 					j.logger.Error("Failed to check ban status", "ip", entry.IP, "error", err)
@@ -87,10 +89,17 @@ func (j *Judge) Tribunal() {
 				}
 				if banned {
 					j.logger.Info("IP already banned", "ip", entry.IP)
-					j.resultCh <- entry
 					break
 				}
-
+				exceeded, err := j.db_rq.IsMaxRetryExceeded(entry.IP, rule.MaxRetry)
+				if err != nil {
+					j.logger.Error("Failed to check retry count", "ip", entry.IP, "error", err)
+					break
+				}
+				if !exceeded {
+					j.logger.Info("Max retry not exceeded", "ip", entry.IP)
+					break
+				}
 				err = j.db_w.AddBan(entry.IP, rule.BanTime, rule.Name)
 				if err != nil {
 					j.logger.Error(
@@ -118,7 +127,6 @@ func (j *Judge) Tribunal() {
 					"ban_time",
 					rule.BanTime,
 				)
-				j.resultCh <- entry
 				break
 			}
 		}
