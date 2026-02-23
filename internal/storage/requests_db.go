@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	_ "modernc.org/sqlite"
 )
 
@@ -59,8 +60,10 @@ func (r *RequestReader) IsMaxRetryExceeded(ip string, maxRetry int) (bool, error
 	err := r.db.QueryRow("SELECT COUNT(*) FROM requests WHERE ip = ?", ip).Scan(&count)
 	if err != nil {
 		r.logger.Error("error query count: " + err.Error())
+		metrics.IncError()
 		return false, err
 	}
 	r.logger.Info("Current request count for IP", "ip", ip, "count", count, "maxRetry", maxRetry)
+	metrics.IncDBOperation("select", "requests")
 	return count >= maxRetry, nil
 }

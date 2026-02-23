@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -39,6 +40,58 @@ func IncLogParsed() {
 	metricsMu.Unlock()
 }
 
+func IncError() {
+	metricsMu.Lock()
+	metrics["error_count"]++
+	metricsMu.Unlock()
+}
+
+func IncBanAttempt(firewall string) {
+	metricsMu.Lock()
+	metrics["ban_attempt_count"]++
+	metrics[firewall+"_ban_attempts"]++
+	metricsMu.Unlock()
+}
+
+func IncUnbanAttempt(firewall string) {
+	metricsMu.Lock()
+	metrics["unban_attempt_count"]++
+	metrics[firewall+"_unban_attempts"]++
+	metricsMu.Unlock()
+}
+
+func IncPortOperation(operation string, protocol string) {
+	metricsMu.Lock()
+	key := "port_" + operation + "_" + protocol
+	metrics[key]++
+	metricsMu.Unlock()
+}
+
+func IncParserEvent(service string) {
+	metricsMu.Lock()
+	metrics[service+"_parsed_events"]++
+	metricsMu.Unlock()
+}
+
+func IncScannerEvent(service string) {
+	metricsMu.Lock()
+	metrics[service+"_scanner_events"]++
+	metricsMu.Unlock()
+}
+
+func IncDBOperation(operation string, table string) {
+	metricsMu.Lock()
+	key := "db_" + operation + "_" + table
+	metrics[key]++
+	metricsMu.Unlock()
+}
+
+func IncRequestCount(service string) {
+	metricsMu.Lock()
+	metrics[service+"_request_count"]++
+	metricsMu.Unlock()
+}
+
 func MetricsHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		metricsMu.RLock()
@@ -58,12 +111,12 @@ func MetricsHandler() http.Handler {
 	})
 }
 
-func StartMetricsServer(port int) {
+func StartMetricsServer(port int) error {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", MetricsHandler())
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", port),
+		Addr:         "localhost:" + strconv.Itoa(port),
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -72,6 +125,7 @@ func StartMetricsServer(port int) {
 
 	log.Printf("Starting metrics server on %s", server.Addr)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Printf("Metrics server error: %v", err)
+		return fmt.Errorf("metrics server failed: %w", err)
 	}
+	return nil
 }

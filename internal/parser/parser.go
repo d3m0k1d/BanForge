@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 type Event struct {
@@ -137,6 +138,7 @@ func (s *Scanner) Start() {
 
 			default:
 				if s.scanner.Scan() {
+					metrics.IncScannerEvent("scanner")
 					s.ch <- Event{
 						Data: s.scanner.Text(),
 					}
@@ -144,6 +146,7 @@ func (s *Scanner) Start() {
 				} else {
 					if err := s.scanner.Err(); err != nil {
 						s.logger.Error("Scanner error")
+						metrics.IncError()
 						return
 					}
 				}

@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/d3m0k1d/BanForge/internal/storage"
 )
 
@@ -50,6 +51,7 @@ func (p *ApacheParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogE
 			Status:  status,
 			Method:  method,
 		}
+		metrics.IncParserEvent("apache")
 		p.logger.Info(
 			"Parsed apache log entry",
 			"ip", matches[1],

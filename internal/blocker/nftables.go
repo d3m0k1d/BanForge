@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 type Nftables struct {
@@ -26,6 +27,7 @@ func (n *Nftables) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncBanAttempt("nftables")
 	// #nosec G204 - ip is validated
 	cmd := exec.Command("nft", "add", "rule", "inet", "banforge", "banned",
 		"ip", "saddr", ip, "drop")
@@ -35,16 +37,19 @@ func (n *Nftables) Ban(ip string) error {
 			"ip", ip,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 
 	n.logger.Info("IP banned", "ip", ip)
+	metrics.IncBan("nftables")
 
 	err = saveNftablesConfig(n.config)
 	if err != nil {
 		n.logger.Error("failed to save config",
 			"config_path", n.config,
 			"error", err.Error())
+		metrics.IncError()
 		return err
 	}
 
@@ -57,17 +62,20 @@ func (n *Nftables) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncUnbanAttempt("nftables")
 
 	handle, err := n.findRuleHandle(ip)
 	if err != nil {
 		n.logger.Error("failed to find rule handle",
 			"ip", ip,
 			"error", err.Error())
+		metrics.IncError()
 		return err
 	}
 
 	if handle == "" {
 		n.logger.Warn("no rule found for IP", "ip", ip)
+		metrics.IncError()
 		return fmt.Errorf("no rule found for IP %s", ip)
 	}
 	// #nosec G204 - handle is extracted from nftables output and validated
@@ -80,16 +88,19 @@ func (n *Nftables) Unban(ip string) error {
 			"handle", handle,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 
 	n.logger.Info("IP unbanned", "ip", ip, "handle", handle)
+	metrics.IncUnban("nftables")
 
 	err = saveNftablesConfig(n.config)
 	if err != nil {
 		n.logger.Error("failed to save config",
 			"config_path", n.config,
 			"error", err.Error())
+		metrics.IncError()
 		return err
 	}
 
@@ -172,9 +183,11 @@ func (n *Nftables) PortOpen(port int, protocol string) error {
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
 			n.logger.Error("invalid protocol")
+			metrics.IncError()
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("open", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command(
 			"nft",
@@ -191,6 +204,7 @@ func (n *Nftables) PortOpen(port int, protocol string) error {
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			n.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		n.logger.Info("Add port " + s + " " + string(output))
@@ -199,6 +213,7 @@ func (n *Nftables) PortOpen(port int, protocol string) error {
 			n.logger.Error("failed to save config",
 				"config_path", n.config,
 				"error", err.Error())
+			metrics.IncError()
 			return err
 		}
 	}
@@ -209,9 +224,11 @@ func (n *Nftables) PortClose(port int, protocol string) error {
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
 			n.logger.Error("invalid protocol")
+			metrics.IncError()
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("close", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command(
 			"nft",
@@ -228,6 +245,7 @@ func (n *Nftables) PortClose(port int, protocol string) error {
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			n.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		n.logger.Info("Add port " + s + " " + string(output))
@@ -236,6 +254,7 @@ func (n *Nftables) PortClose(port int, protocol string) error {
 			n.logger.Error("failed to save config",
 				"config_path", n.config,
 				"error", err.Error())
+			metrics.IncError()
 			return err
 		}
 

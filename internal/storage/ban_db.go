@@ -8,6 +8,7 @@ import (
 
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/jedib0t/go-pretty/v6/table"
 	_ "modernc.org/sqlite"
 )
@@ -37,6 +38,7 @@ func (d *BanWriter) CreateTable() error {
 	if err != nil {
 		return err
 	}
+	metrics.IncDBOperation("create_table", "bans")
 	d.logger.Info("Created tables")
 	return nil
 }
@@ -45,6 +47,7 @@ func (d *BanWriter) AddBan(ip string, ttl string, reason string) error {
 	duration, err := config.ParseDurationWithYears(ttl)
 	if err != nil {
 		d.logger.Error("Invalid duration format", "ttl", ttl, "error", err)
+		metrics.IncError()
 		return fmt.Errorf("invalid duration: %w", err)
 	}
 
@@ -60,9 +63,11 @@ func (d *BanWriter) AddBan(ip string, ttl string, reason string) error {
 	)
 	if err != nil {
 		d.logger.Error("Failed to add ban", "error", err)
+		metrics.IncError()
 		return err
 	}
 
+	metrics.IncDBOperation("insert", "bans")
 	return nil
 }
 
@@ -70,8 +75,10 @@ func (d *BanWriter) RemoveBan(ip string) error {
 	_, err := d.db.Exec("DELETE FROM bans WHERE ip = ?", ip)
 	if err != nil {
 		d.logger.Error("Failed to remove ban", "error", err)
+		metrics.IncError()
 		return err
 	}
+	metrics.IncDBOperation("delete", "bans")
 	return nil
 }
 
@@ -85,6 +92,7 @@ func (w *BanWriter) RemoveExpiredBans() ([]string, error) {
 	)
 	if err != nil {
 		w.logger.Error("Failed to get expired bans", "error", err)
+		metrics.IncError()
 		return nil, err
 	}
 	defer func() {
@@ -113,6 +121,7 @@ func (w *BanWriter) RemoveExpiredBans() ([]string, error) {
 	)
 	if err != nil {
 		w.logger.Error("Failed to remove expired bans", "error", err)
+		metrics.IncError()
 		return nil, err
 	}
 
@@ -123,6 +132,7 @@ func (w *BanWriter) RemoveExpiredBans() ([]string, error) {
 
 	if rowsAffected > 0 {
 		w.logger.Info("Removed expired bans", "count", rowsAffected, "ips", len(ips))
+		metrics.IncDBOperation("delete_expired", "bans")
 	}
 
 	return ips, nil
@@ -169,8 +179,10 @@ func (d *BanReader) IsBanned(ip string) (bool, error) {
 		return false, nil
 	}
 	if err != nil {
+		metrics.IncError()
 		return false, fmt.Errorf("failed to check ban status: %w", err)
 	}
+	metrics.IncDBOperation("select", "bans")
 	return true, nil
 }
 
@@ -183,6 +195,7 @@ func (d *BanReader) BanList() error {
 	rows, err := d.db.Query("SELECT ip, banned_at, reason, expired_at  FROM bans")
 	if err != nil {
 		d.logger.Error("Failed to get ban list", "error", err)
+		metrics.IncError()
 		return err
 	}
 	for rows.Next() {
@@ -194,12 +207,14 @@ func (d *BanReader) BanList() error {
 		err := rows.Scan(&ip, &bannedAt, &reason, &expiredAt)
 		if err != nil {
 			d.logger.Error("Failed to get ban list", "error", err)
+			metrics.IncError()
 			return err
 		}
 		t.AppendRow(table.Row{count, ip, bannedAt, reason, expiredAt})
 
 	}
 	t.Render()
+	metrics.IncDBOperation("select", "bans")
 	return nil
 }
 

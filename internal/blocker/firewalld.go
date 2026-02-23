@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 type Firewalld struct {
@@ -23,20 +24,24 @@ func (f *Firewalld) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncBanAttempt("firewalld")
 	// #nosec G204 - ip is validated
 	cmd := exec.Command("firewall-cmd", "--zone=drop", "--add-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("Add source " + ip + " " + string(output))
 	output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("Reload " + string(output))
+	metrics.IncBan("firewalld")
 	return nil
 }
 
@@ -45,20 +50,24 @@ func (f *Firewalld) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncUnbanAttempt("firewalld")
 	// #nosec G204 - ip is validated
 	cmd := exec.Command("firewall-cmd", "--zone=drop", "--remove-source", ip, "--permanent")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("Remove source " + ip + " " + string(output))
 	output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 	if err != nil {
 		f.logger.Error(err.Error())
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("Reload " + string(output))
+	metrics.IncUnban("firewalld")
 	return nil
 }
 
@@ -70,6 +79,7 @@ func (f *Firewalld) PortOpen(port int, protocol string) error {
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("open", protocol)
 		cmd := exec.Command(
 			"firewall-cmd",
 			"--zone=public",
@@ -79,12 +89,14 @@ func (f *Firewalld) PortOpen(port int, protocol string) error {
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			f.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Add port " + s + " " + string(output))
 		output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 		if err != nil {
 			f.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Reload " + string(output))
@@ -99,6 +111,7 @@ func (f *Firewalld) PortClose(port int, protocol string) error {
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("close", protocol)
 		cmd := exec.Command(
 			"firewall-cmd",
 			"--zone=public",
@@ -107,11 +120,13 @@ func (f *Firewalld) PortClose(port int, protocol string) error {
 		)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Remove port " + s + " " + string(output))
 		output, err = exec.Command("firewall-cmd", "--reload").CombinedOutput()
 		if err != nil {
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Reload " + string(output))

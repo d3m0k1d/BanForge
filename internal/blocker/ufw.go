@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 type Ufw struct {
@@ -23,6 +24,7 @@ func (u *Ufw) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncBanAttempt("ufw")
 	// #nosec G204 - ip is validated
 	cmd := exec.Command("ufw", "--force", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
@@ -31,10 +33,12 @@ func (u *Ufw) Ban(ip string) error {
 			"ip", ip,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return fmt.Errorf("failed to ban IP %s: %w", ip, err)
 	}
 
 	u.logger.Info("IP banned", "ip", ip, "output", string(output))
+	metrics.IncBan("ufw")
 	return nil
 }
 func (u *Ufw) Unban(ip string) error {
@@ -42,6 +46,7 @@ func (u *Ufw) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncUnbanAttempt("ufw")
 	// #nosec G204 - ip is validated
 	cmd := exec.Command("ufw", "--force", "delete", "deny", "from", ip)
 	output, err := cmd.CombinedOutput()
@@ -50,10 +55,12 @@ func (u *Ufw) Unban(ip string) error {
 			"ip", ip,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return fmt.Errorf("failed to unban IP %s: %w", ip, err)
 	}
 
 	u.logger.Info("IP unbanned", "ip", ip, "output", string(output))
+	metrics.IncUnban("ufw")
 	return nil
 }
 
@@ -61,14 +68,17 @@ func (u *Ufw) PortOpen(port int, protocol string) error {
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
 			u.logger.Error("invalid protocol")
+			metrics.IncError()
 			return fmt.Errorf("invalid protocol")
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("open", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command("ufw", "allow", s+"/"+protocol)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			u.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		u.logger.Info("Add port " + s + " " + string(output))
@@ -80,14 +90,17 @@ func (u *Ufw) PortClose(port int, protocol string) error {
 	if port >= 0 && port <= 65535 {
 		if protocol != "tcp" && protocol != "udp" {
 			u.logger.Error("invalid protocol")
+			metrics.IncError()
 			return nil
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("close", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command("ufw", "deny", s+"/"+protocol)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			u.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		u.logger.Info("Add port " + s + " " + string(output))

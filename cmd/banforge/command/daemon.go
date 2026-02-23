@@ -10,6 +10,7 @@ import (
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/judge"
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/d3m0k1d/BanForge/internal/parser"
 	"github.com/d3m0k1d/BanForge/internal/storage"
 	"github.com/spf13/cobra"
@@ -60,10 +61,13 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load config", "error", err)
 			os.Exit(1)
 		}
-		_, err = config.LoadMetricsConfig()
-		if err != nil {
-			log.Error("Failed to load metrics config", "error", err)
-			os.Exit(1)
+
+		if cfg.Metrics.Enabled {
+			go func() {
+				if err := metrics.StartMetricsServer(cfg.Metrics.Port); err != nil {
+					log.Error("Failed to start metrics server", "error", err)
+				}
+			}()
 		}
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name

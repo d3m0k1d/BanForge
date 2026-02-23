@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 type Iptables struct {
@@ -24,6 +25,7 @@ func (f *Iptables) Ban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncBanAttempt("iptables")
 	err = validateConfigPath(f.config)
 	if err != nil {
 		return err
@@ -36,11 +38,13 @@ func (f *Iptables) Ban(ip string) error {
 			"ip", ip,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("IP banned",
 		"ip", ip,
 		"output", string(output))
+	metrics.IncBan("iptables")
 
 	err = validateConfigPath(f.config)
 	if err != nil {
@@ -54,6 +58,7 @@ func (f *Iptables) Ban(ip string) error {
 			"config_path", f.config,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("config saved",
@@ -67,6 +72,7 @@ func (f *Iptables) Unban(ip string) error {
 	if err != nil {
 		return err
 	}
+	metrics.IncUnbanAttempt("iptables")
 	err = validateConfigPath(f.config)
 	if err != nil {
 		return err
@@ -79,11 +85,13 @@ func (f *Iptables) Unban(ip string) error {
 			"ip", ip,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("IP unbanned",
 		"ip", ip,
 		"output", string(output))
+	metrics.IncUnban("iptables")
 
 	err = validateConfigPath(f.config)
 	if err != nil {
@@ -97,6 +105,7 @@ func (f *Iptables) Unban(ip string) error {
 			"config_path", f.config,
 			"error", err.Error(),
 			"output", string(output))
+		metrics.IncError()
 		return err
 	}
 	f.logger.Info("config saved",
@@ -112,11 +121,13 @@ func (f *Iptables) PortOpen(port int, protocol string) error {
 			return nil
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("open", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command("iptables", "-A", "INPUT", "-p", protocol, "--dport", s, "-j", "ACCEPT")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			f.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Add port " + s + " " + string(output))
@@ -128,6 +139,7 @@ func (f *Iptables) PortOpen(port int, protocol string) error {
 				"config_path", f.config,
 				"error", err.Error(),
 				"output", string(output))
+			metrics.IncError()
 			return err
 		}
 	}
@@ -141,11 +153,13 @@ func (f *Iptables) PortClose(port int, protocol string) error {
 			return nil
 		}
 		s := strconv.Itoa(port)
+		metrics.IncPortOperation("close", protocol)
 		// #nosec G204 - managed by system adminstartor
 		cmd := exec.Command("iptables", "-D", "INPUT", "-p", protocol, "--dport", s, "-j", "ACCEPT")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			f.logger.Error(err.Error())
+			metrics.IncError()
 			return err
 		}
 		f.logger.Info("Add port " + s + " " + string(output))
@@ -157,6 +171,7 @@ func (f *Iptables) PortClose(port int, protocol string) error {
 				"config_path", f.config,
 				"error", err.Error(),
 				"output", string(output))
+			metrics.IncError()
 			return err
 		}
 	}

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
 func WriteReq(db *RequestWriter, resultCh <-chan *LogEntry) {
@@ -61,6 +63,9 @@ func WriteReq(db *RequestWriter, resultCh <-chan *LogEntry) {
 				)
 				if err != nil {
 					db.logger.Error(fmt.Errorf("failed to insert entry: %w", err).Error())
+					metrics.IncError()
+				} else {
+					metrics.IncRequestCount(entry.Service)
 				}
 			}
 
@@ -69,6 +74,7 @@ func WriteReq(db *RequestWriter, resultCh <-chan *LogEntry) {
 			}
 
 			batch = batch[:0]
+			metrics.IncDBOperation("insert", "requests")
 			return err
 		}()
 		if err != nil {

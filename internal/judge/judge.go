@@ -8,6 +8,7 @@ import (
 	"github.com/d3m0k1d/BanForge/internal/blocker"
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/d3m0k1d/BanForge/internal/storage"
 )
 
@@ -85,19 +86,23 @@ func (j *Judge) Tribunal() {
 				banned, err := j.db_r.IsBanned(entry.IP)
 				if err != nil {
 					j.logger.Error("Failed to check ban status", "ip", entry.IP, "error", err)
+					metrics.IncError()
 					break
 				}
 				if banned {
 					j.logger.Info("IP already banned", "ip", entry.IP)
+					metrics.IncLogParsed()
 					break
 				}
 				exceeded, err := j.db_rq.IsMaxRetryExceeded(entry.IP, rule.MaxRetry)
 				if err != nil {
 					j.logger.Error("Failed to check retry count", "ip", entry.IP, "error", err)
+					metrics.IncError()
 					break
 				}
 				if !exceeded {
 					j.logger.Info("Max retry not exceeded", "ip", entry.IP)
+					metrics.IncLogParsed()
 					break
 				}
 				err = j.db_w.AddBan(entry.IP, rule.BanTime, rule.Name)
@@ -116,6 +121,7 @@ func (j *Judge) Tribunal() {
 
 				if err := j.Blocker.Ban(entry.IP); err != nil {
 					j.logger.Error("Failed to ban IP at firewall", "ip", entry.IP, "error", err)
+					metrics.IncError()
 					break
 				}
 				j.logger.Info(
@@ -127,6 +133,7 @@ func (j *Judge) Tribunal() {
 					"ban_time",
 					rule.BanTime,
 				)
+				metrics.IncBan(rule.ServiceName)
 				break
 			}
 		}
@@ -147,12 +154,16 @@ func (j *Judge) UnbanChecker() {
 		ips, err := j.db_w.RemoveExpiredBans()
 		if err != nil {
 			j.logger.Error(fmt.Sprintf("Failed to check expired bans: %v", err))
+			metrics.IncError()
 			continue
 		}
 
 		for _, ip := range ips {
 			if err := j.Blocker.Unban(ip); err != nil {
 				j.logger.Error(fmt.Sprintf("Failed to unban IP at firewall: %v", err))
+				metrics.IncError()
+			} else {
+				metrics.IncUnban("judge")
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/d3m0k1d/BanForge/internal/storage"
 )
 
@@ -36,6 +37,7 @@ func (p *SshdParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogEnt
 			Status:  "Failed",
 			Method:  matches[4], // method auth
 		}
+		metrics.IncParserEvent("ssh")
 		p.logger.Info(
 			"Parsed ssh log entry",
 			"ip",

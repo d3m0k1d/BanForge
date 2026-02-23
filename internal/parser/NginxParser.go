@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
+	"github.com/d3m0k1d/BanForge/internal/metrics"
 	"github.com/d3m0k1d/BanForge/internal/storage"
 )
 
@@ -40,6 +41,7 @@ func (p *NginxParser) Parse(eventCh <-chan Event, resultCh chan<- *storage.LogEn
 			Status:  status,
 			Method:  method,
 		}
+		metrics.IncParserEvent("nginx")
 		p.logger.Info(
 			"Parsed nginx log entry",
 			"ip",
