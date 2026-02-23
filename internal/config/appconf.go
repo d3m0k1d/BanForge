@@ -1,15 +1,14 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/d3m0k1d/BanForge/internal/metrics"
 )
 
@@ -30,114 +29,149 @@ func LoadMetricsConfig() (*Metrics, error) {
 }
 
 func LoadRuleConfig() ([]Rule, error) {
-	log := logger.New(false)
+	const rulesDir = "/etc/banforge/rules.d"
+
 	var cfg Rules
-	_, err := toml.DecodeFile("/etc/banforge/rules.toml", &cfg)
+
+	files, err := os.ReadDir(rulesDir)
 	if err != nil {
-		log.Error(fmt.Sprintf("failed to decode config: %v", err))
-		return nil, err
+		return nil, fmt.Errorf("failed to read rules directory: %w", err)
 	}
 
-	log.Info(fmt.Sprintf("loaded %d rules", len(cfg.Rules)))
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".toml") {
+			continue
+		}
+
+		filePath := filepath.Join(rulesDir, file.Name())
+		var fileCfg Rules
+
+		if _, err := toml.DecodeFile(filePath, &fileCfg); err != nil {
+			return nil, fmt.Errorf("failed to parse rule file %s: %w", filePath, err)
+		}
+
+		cfg.Rules = append(cfg.Rules, fileCfg.Rules...)
+	}
+
 	return cfg.Rules, nil
 }
 
 func NewRule(
-	Name string,
-	ServiceName string,
-	Path string,
-	Status string,
-	Method string,
+	name string,
+	serviceName string,
+	path string,
+	status string,
+	method string,
 	ttl string,
-	max_retry int,
+	maxRetry int,
 ) error {
-	r, err := LoadRuleConfig()
-	if err != nil {
-		r = []Rule{}
+	if name == "" {
+		return fmt.Errorf("rule name can't be empty")
 	}
-	if Name == "" {
-		fmt.Printf("Rule name can't be empty\n")
-		return nil
+
+	rule := Rule{
+		Name:        name,
+		ServiceName: serviceName,
+		Path:        path,
+		Status:      status,
+		Method:      method,
+		BanTime:     ttl,
+		MaxRetry:    maxRetry,
 	}
-	r = append(
-		r,
-		Rule{
-			Name:        Name,
-			ServiceName: ServiceName,
-			Path:        Path,
-			Status:      Status,
-			Method:      Method,
-			BanTime:     ttl,
-			MaxRetry:    max_retry,
-		},
-	)
-	file, err := os.Create("/etc/banforge/rules.toml")
+
+	filePath := filepath.Join("/etc/banforge/rules.d", SanitizeRuleFilename(name)+".toml")
+
+	if _, err := os.Stat(filePath); err == nil {
+		return fmt.Errorf("rule with name '%s' already exists", name)
+	}
+
+	cfg := Rules{Rules: []Rule{rule}}
+
+	// #nosec G304 - validate by sanitizeRuleFilename
+	file, err := os.Create(filePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create rule file: %w", err)
 	}
 	defer func() {
-		err = errors.Join(err, file.Close())
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Printf("warning: failed to close rule file: %v\n", closeErr)
+		}
 	}()
-	cfg := Rules{Rules: r}
-	err = toml.NewEncoder(file).Encode(cfg)
-	if err != nil {
-		return err
+
+	if err := toml.NewEncoder(file).Encode(cfg); err != nil {
+		return fmt.Errorf("failed to encode rule: %w", err)
 	}
+
 	return nil
 }
 
-func EditRule(Name string, ServiceName string, Path string, Status string, Method string) error {
-	if Name == "" {
-		return fmt.Errorf("Rule name can't be empty")
+func EditRule(name string, serviceName string, path string, status string, method string) error {
+	if name == "" {
+		return fmt.Errorf("rule name can't be empty")
 	}
 
-	r, err := LoadRuleConfig()
+	rules, err := LoadRuleConfig()
 	if err != nil {
-		return fmt.Errorf("rules is empty, please use 'banforge add rule' or create rules.toml")
+		return fmt.Errorf("failed to load rules: %w", err)
 	}
 
 	found := false
-	for i, rule := range r {
-		if rule.Name == Name {
+	var updatedRule *Rule
+	for i, rule := range rules {
+		if rule.Name == name {
 			found = true
+			updatedRule = &rules[i]
 
-			if ServiceName != "" {
-				r[i].ServiceName = ServiceName
+			if serviceName != "" {
+				updatedRule.ServiceName = serviceName
 			}
-			if Path != "" {
-				r[i].Path = Path
+			if path != "" {
+				updatedRule.Path = path
 			}
-			if Status != "" {
-				r[i].Status = Status
+			if status != "" {
+				updatedRule.Status = status
 			}
-			if Method != "" {
-				r[i].Method = Method
+			if method != "" {
+				updatedRule.Method = method
 			}
 			break
 		}
 	}
 
 	if !found {
-		return fmt.Errorf("rule '%s' not found", Name)
+		return fmt.Errorf("rule '%s' not found", name)
 	}
 
-	file, err := os.Create("/etc/banforge/rules.toml")
+	filePath := filepath.Join("/etc/banforge/rules.d", SanitizeRuleFilename(name)+".toml")
+	cfg := Rules{Rules: []Rule{*updatedRule}}
+
+	// #nosec G304 - validate by sanitizeRuleFilename
+	file, err := os.Create(filePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update rule file: %w", err)
 	}
 	defer func() {
-		err = file.Close()
-		if err != nil {
-			fmt.Println(err)
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Printf("warning: failed to close rule file: %v\n", closeErr)
 		}
 	}()
 
-	cfg := Rules{Rules: r}
 	if err := toml.NewEncoder(file).Encode(cfg); err != nil {
-		return fmt.Errorf("failed to encode config: %w", err)
+		return fmt.Errorf("failed to encode updated rule: %w", err)
 	}
 
 	return nil
+}
+
+func SanitizeRuleFilename(name string) string {
+	result := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') || r == '-' || r == '_' {
+			return r
+		}
+		return '_'
+	}, name)
+	return strings.ToLower(result)
 }
 
 func ParseDurationWithYears(s string) (time.Duration, error) {
