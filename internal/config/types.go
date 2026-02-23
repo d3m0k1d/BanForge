@@ -37,3 +37,22 @@ type Metrics struct {
 	Enabled bool `toml:"enabled"`
 	Port    int  `toml:"port"`
 }
+
+// Actions
+type Action struct {
+	Type          string            `toml:"type"`
+	Enabled       bool              `toml:"enabled"`
+	URL           string            `toml:"url"`
+	Headers       map[string]string `toml:"headers"`
+	Body          string            `toml:"body"`
+	Email         string            `toml:"email"`
+	EmailSender   string            `toml:"email_sender"`
+	EmailSubject  string            `toml:"email_subject"`
+	SMTPHost      string            `toml:"smtp_host"`
+	SMTPPort      int               `toml:"smtp_port"`
+	SMTPUser      string            `toml:"smtp_user"`
+	SMTPPassword  string            `toml:"smtp_password"`
+	SMTPTLS       bool              `toml:"smtp_tls"`
+	Interpretator string            `toml:"interpretator"`
+	Script        string            `toml:"script"`
+}
