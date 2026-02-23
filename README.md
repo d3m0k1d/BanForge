@@ -22,6 +22,7 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - [x] Rule system
 - [x] Nginx and Sshd support
 - [x] Working with ufw/iptables/nftables/firewalld
+- [x] Prometheus metrics
 - [ ] Add support for most popular web-service
 - [ ] User regexp for custom services
 - [ ] TUI interface
@@ -40,10 +41,10 @@ In release page you can find rpm, deb, apk packages, for amd or arm architecture
 ### Debian/Ubuntu(.deb)
 ```bash
 # Download the latest DEB package
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.deb
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.deb
 
 # Install
-sudo dpkg -i banforge_0.4.0_linux_amd64.deb
+sudo dpkg -i banforge_0.6.0_linux_amd64.deb
 
 # Verify installation
 sudo systemctl status banforge
@@ -53,13 +54,13 @@ sudo systemctl status banforge
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.rpm
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.rpm
 
 # Install
-sudo rpm -i banforge_0.4.0_linux_amd64.rpm
+sudo rpm -i banforge_0.6.0_linux_amd64.rpm
 
 # Or with dnf (CentOS 8+, AlmaLinux)
-sudo dnf install banforge_0.4.0_linux_amd64.rpm
+sudo dnf install banforge_0.6.0_linux_amd64.rpm
 
 # Verify
 sudo systemctl status banforge
@@ -69,10 +70,10 @@ sudo systemctl status banforge
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.apk
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.apk
 
 # Install
-sudo apk add --allow-untrusted banforge_0.4.0_linux_amd64.apk
+sudo apk add --allow-untrusted banforge_0.6.0_linux_amd64.apk
 
 # Verify
 sudo rc-service banforge status
@@ -82,10 +83,10 @@ sudo rc-service banforge status
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.4.0/banforge_0.4.0_linux_amd64.pkg.tar.zst
+wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.pkg.tar.zst
 
 # Install
-sudo pacman -U banforge_0.4.0_linux_amd64.pkg.tar.zst
+sudo pacman -U banforge_0.6.0_linux_amd64.pkg.tar.zst
 
 # Verify
 sudo systemctl status banforge
