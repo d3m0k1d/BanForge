@@ -44,6 +44,7 @@ type Action struct {
 	Type          string            `toml:"type"`
 	Enabled       bool              `toml:"enabled"`
 	URL           string            `toml:"url"`
+	Method        string            `toml:"method"`
 	Headers       map[string]string `toml:"headers"`
 	Body          string            `toml:"body"`
 	Email         string            `toml:"email"`
