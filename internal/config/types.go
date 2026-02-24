@@ -24,13 +24,13 @@ type Rules struct {
 }
 
 type Rule struct {
-	Name        string `toml:"name"`
-	ServiceName string `toml:"service"`
-	Path        string `toml:"path"`
-	Status      string `toml:"status"`
-	Method      string `toml:"method"`
-	MaxRetry    int    `toml:"max_retry"`
-	BanTime     string `toml:"ban_time"`
+	Name        string   `toml:"name"`
+	ServiceName string   `toml:"service"`
+	Path        string   `toml:"path"`
+	Status      string   `toml:"status"`
+	Method      string   `toml:"method"`
+	MaxRetry    int      `toml:"max_retry"`
+	BanTime     string   `toml:"ban_time"`
 	Action      []Action `toml:"action"`
 }
 
