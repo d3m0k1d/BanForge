@@ -23,6 +23,7 @@ If you have any questions or suggestions, create issue on [Github](https://githu
 - [x] Nginx and Sshd support
 - [x] Working with ufw/iptables/nftables/firewalld
 - [x] Prometheus metrics
+- [x] Actions (email, webhook, script)
 - [ ] Add support for most popular web-service
 - [ ] User regexp for custom services
 - [ ] TUI interface
@@ -112,10 +113,20 @@ For first steps use this commands
 banforge init   # Create config files and database
 banforge daemon # Start BanForge daemon (use systemd or another init system to create a service)
 ```
-You can edit the config file with examples in 
+You can edit the config file with examples in
 - `/etc/banforge/config.toml` main config file
-- `/etc/banforge/rules.toml` ban rules
+- `/etc/banforge/rules.d/*.toml` individual rule files with actions support
+
 For more information see the [docs](https://github.com/d3m0k1d/BanForge/docs).
+
+## Actions
+
+BanForge supports actions that are executed after a successful IP ban:
+- **Email** - Send email notifications via SMTP
+- **Webhook** - Send HTTP requests to external services (Slack, Telegram, etc.)
+- **Script** - Execute custom scripts
+
+See [configuration docs](https://github.com/d3m0k1d/BanForge/blob/main/docs/config.md#actions) for detailed setup instructions.
 
 # License
 The project is licensed under the [GPL-3.0](https://github.com/d3m0k1d/BanForge/blob/master/LICENSE)

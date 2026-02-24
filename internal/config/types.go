@@ -31,7 +31,7 @@ type Rule struct {
 	Method      string `toml:"method"`
 	MaxRetry    int    `toml:"max_retry"`
 	BanTime     string `toml:"ban_time"`
-	Action      []Action
+	Action      []Action `toml:"action"`
 }
 
 type Metrics struct {

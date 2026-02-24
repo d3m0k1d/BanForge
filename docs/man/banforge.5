@@ -198,9 +198,36 @@ Use the following suffixes for ban duration:
 \fBy\fR \- Years (365 days)
 .RE
 .
-.SH "ACTIONS(NOT WORKING ON THIS VERSION)"
+.SH "ACTIONS"
 .PP
 Rules can trigger custom actions when an IP is banned.
+Multiple actions can be configured per rule.
+Actions are executed after successful ban at firewall level.
+.
+.SS "Supported Action Types"
+.PP
+.RS
+.IP \(bu 2
+\fBemail\fR \- Send email notification via SMTP
+.IP \(bu 2
+\fBwebhook\fR \- Send HTTP request to external service
+.IP \(bu 2
+\fBscript\fR \- Execute custom script
+.RE
+.
+.SS "Variables"
+.PP
+The following variables can be used in \fBbody\fR fields:
+.RS
+.IP \(bu 2
+\fB{ip}\fR \- Banned IP address
+.IP \(bu 2
+\fB{rule}\fR \- Rule name that triggered the ban
+.IP \(bu 2
+\fB{service}\fR \- Service name
+.IP \(bu 2
+\fB{ban_time}\fR \- Ban duration
+.RE
 .
 .SS "Script Action"
 .PP
@@ -213,7 +240,7 @@ Execute a custom script when an IP is banned.
 .IP \(bu 2
 \fBenabled\fR \- Enable/disable action (true/false)
 .IP \(bu 2
-\fBinterpretator\fR \- Script interpretator (e.g., "/bin/bash")
+\fBinterpretator\fR \- Script interpretator (e.g., "bash", "python")
 .IP \(bu 2
 \fBscript\fR \- Path to script file
 .RE
@@ -226,11 +253,11 @@ Execute a custom script when an IP is banned.
   service = "nginx"
   status = "403"
   ban_time = "1h"
-  
+
   [[rule.action]]
     type = "script"
     enabled = true
-    interpretator = "/bin/bash"
+    interpretator = "bash"
     script = "/opt/banforge/scripts/notify.sh"
 .fi
 .RE
@@ -246,13 +273,13 @@ Send HTTP webhook when an IP is banned.
 .IP \(bu 2
 \fBenabled\fR \- Enable/disable action (true/false)
 .IP \(bu 2
-\fBurl\fR \- Webhook URL
+\fBurl\fR \- Webhook URL \fI(required)\fR
 .IP \(bu 2
-\fBmethod\fR \- HTTP method (POST, GET)
+\fBmethod\fR \- HTTP method (POST, GET, etc.)
 .IP \(bu 2
 \fBheaders\fR \- Custom headers (key-value pairs)
 .IP \(bu 2
-\fBbody\fR \- Request body (supports templates)
+\fBbody\fR \- Request body (supports variables)
 .RE
 .PP
 \fBExample:\fR
@@ -263,14 +290,8 @@ Send HTTP webhook when an IP is banned.
   enabled = true
   url = "https://hooks.example.com/ban"
   method = "POST"
-  
-  [rule.action.headers]
-    Content-Type = "application/json"
-    Authorization = "Bearer TOKEN"
-  
-  [rule.action.body]
-    ip = "{{.IP}}"
-    reason = "{{.Rule}}"
+  headers = { "Content-Type" = "application/json", "Authorization" = "Bearer TOKEN" }
+  body = "{\\\"ip\\\": \\\"{ip}\\\", \\\"rule\\\": \\\"{rule}\\\"}"
 .fi
 .RE
 .
@@ -285,21 +306,23 @@ Send email notification when an IP is banned.
 .IP \(bu 2
 \fBenabled\fR \- Enable/disable action (true/false)
 .IP \(bu 2
-\fBemail\fR \- Recipient email address
+\fBemail\fR \- Recipient email address \fI(required)\fR
 .IP \(bu 2
-\fBemail_sender\fR \- Sender email address
+\fBemail_sender\fR \- Sender email address \fI(required)\fR
 .IP \(bu 2
-\fBemail_subject\fR \- Email subject
+\fBemail_subject\fR \- Email subject (default: "BanForge Alert")
 .IP \(bu 2
-\fBsmtp_host\fR \- SMTP server host
+\fBsmtp_host\fR \- SMTP server host \fI(required)\fR
 .IP \(bu 2
-\fBsmtp_port\fR \- SMTP server port
+\fBsmtp_port\fR \- SMTP server port \fI(required)\fR
 .IP \(bu 2
-\fBsmtp_user\fR \- SMTP username
+\fBsmtp_user\fR \- SMTP username \fI(required)\fR
 .IP \(bu 2
-\fBsmtp_password\fR \- SMTP password
+\fBsmtp_password\fR \- SMTP password \fI(required)\fR
 .IP \(bu 2
 \fBsmtp_tls\fR \- Enable TLS (true/false)
+.IP \(bu 2
+\fBbody\fR \- Email body text (supports variables)
 .RE
 .PP
 \fBExample:\fR
@@ -316,6 +339,49 @@ Send email notification when an IP is banned.
   smtp_user = "banforge"
   smtp_password = "secret"
   smtp_tls = true
+  body = "IP {ip} has been banned for rule {rule}"
+.fi
+.RE
+.
+.SH "COMPLETE RULE EXAMPLE WITH ACTIONS"
+.PP
+.RS
+.nf
+[[rule]]
+  name = "nginx-403"
+  service = "nginx"
+  status = "403"
+  max_retry = 3
+  ban_time = "1h"
+
+  # Email notification
+  [[rule.action]]
+    type = "email"
+    enabled = true
+    email = "admin@example.com"
+    email_sender = "banforge@example.com"
+    smtp_host = "smtp.example.com"
+    smtp_port = 587
+    smtp_user = "banforge"
+    smtp_password = "secret"
+    smtp_tls = true
+    body = "IP {ip} banned by rule {rule}"
+
+  # Slack webhook
+  [[rule.action]]
+    type = "webhook"
+    enabled = true
+    url = "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+    method = "POST"
+    headers = { "Content-Type" = "application/json" }
+    body = "{\\\"text\\\": \\\"IP {ip} banned for rule {rule}\\\"}"
+
+  # Custom script
+  [[rule.action]]
+    type = "script"
+    enabled = true
+    script = "/usr/local/bin/ban-notify.sh"
+    interpretator = "bash"
 .fi
 .RE
 .

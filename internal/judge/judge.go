@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/d3m0k1d/BanForge/internal/actions"
 	"github.com/d3m0k1d/BanForge/internal/blocker"
 	"github.com/d3m0k1d/BanForge/internal/config"
 	"github.com/d3m0k1d/BanForge/internal/logger"
@@ -124,6 +125,17 @@ func (j *Judge) Tribunal() {
 					metrics.IncError()
 					break
 				}
+
+				for _, action := range rule.Action {
+					executor := &actions.Executor{Action: action}
+					if err := executor.Execute(); err != nil {
+						j.logger.Error("Action execution failed",
+							"rule", rule.Name,
+							"action_type", action.Type,
+							"error", err)
+					}
+				}
+
 				j.logger.Info(
 					"IP banned successfully",
 					"ip",
