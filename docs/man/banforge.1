@@ -1,0 +1,249 @@
+.TH BANFORGE 1 "24 February 2026" "BanForge 1.0"
+.
+.SH NAME
+banforge \- BanForge IPS utility for Linux
+.
+.SH SYNOPSIS
+.B banforge
+[\fIOPTIONS\fR] \fICOMMAND\fR [\fIARGUMENTS\fR]
+.
+.SH DESCRIPTION
+BanForge is an Intrusion Prevention System (IPS) utility for Linux.
+It monitors service logs, detects anomalies and malicious activity,
+and automatically applies firewall rules to block suspicious IP addresses.
+.
+.PP
+The program consists of two components:
+.RS
+.IP \(bu 2
+\fBbanforge\fR \- CLI utility for management
+.IP \(bu 2
+\fBbanforge daemon\fR \- background service for real-time monitoring
+.RE
+.
+.SH COMMANDS
+.
+.SS init \- Create configuration files
+.PP
+\fBbanforge init\fR
+.PP
+Creates the necessary directories and base configuration files:
+.RS
+.IP \(bu 2
+\fI/etc/banforge/config.toml\fR \- main configuration
+.IP \(bu 2
+\fI/etc/banforge/rules.toml\fR \- default rules file
+.IP \(bu 2
+\fI/etc/banforge/rules.d/\fR \- directory for individual rule files
+.RE
+.
+.SS version \- Display BanForge version
+.PP
+\fBbanforge version\fR
+.PP
+Displays the current version of the BanForge software.
+.
+.SS daemon \- Start the BanForge daemon
+.PP
+\fBbanforge daemon\fR
+.PP
+Starts the BanForge daemon process in the background.
+The daemon continuously monitors incoming requests, detects anomalies,
+and applies firewall rules in real-time.
+.
+.SS firewall \- Manage firewall rules
+.PP
+\fBbanforge ban\fR \fI<ip>\fR [\fIOPTIONS\fR]
+.br
+\fBbanforge unban\fR \fI<ip>\fR
+.PP
+These commands provide an abstraction over your firewall.
+.PP
+\fBoptions:\fR
+.RS
+.IP \(bu 2
+\fB-t\fR, \fB--ttl\fR \- Ban duration (default: 1 year)
+.RE
+.PP
+\fBExamples:\fR
+.RS
+.IP \(bu 2
+\fBbanforge ban 192.168.1.100 -t 1h\fR \- Ban IP for 1 hour
+.IP \(bu 2
+\fBbanforge unban 192.168.1.100\fR \- Unban IP
+.RE
+.
+.SS ports \- Manage firewall ports
+.PP
+\fBbanforge open\fR \fB-port\fR \fI<port>\fR \fB-protocol\fR \fI<protocol>\fR
+.br
+\fBbanforge close\fR \fB-port\fR \fI<port>\fR \fB-protocol\fR \fI<protocol>\fR
+.PP
+Open or close ports on the firewall.
+.PP
+\fBflags:\fR
+.RS
+.IP \(bu 2
+\fB-port\fR \- Port number (e.g., 80) \fI(required)\fR
+.IP \(bu 2
+\fB-protocol\fR \- Protocol (tcp/udp) \fI(required)\fR
+.RE
+.PP
+\fBExamples:\fR
+.RS
+.IP \(bu 2
+\fBbanforge open -port 80 -protocol tcp\fR
+.IP \(bu 2
+\fBbanforge close -port 443 -protocol tcp\fR
+.RE
+.
+.SS list \- List blocked IP addresses
+.PP
+\fBbanforge list\fR
+.PP
+Outputs a table of IP addresses that are currently blocked.
+.
+.SS rule \- Manage detection rules
+.PP
+Rules are stored in \fI/etc/banforge/rules.d/\fR as individual \fI.toml\fR files.
+.
+.SS "rule add \- Add a new rule"
+.PP
+\fBbanforge rule add\fR \fB-n\fR \fI<name>\fR \fB-s\fR \fI<service>\fR [\fIOPTIONS\fR]
+.PP
+\fBflags:\fR
+.RS
+.IP \(bu 2
+\fB-n\fR, \fB--name\fR \- Rule name (used as filename) \fI(required)\fR
+.IP \(bu 2
+\fB-s\fR, \fB--service\fR \- Service name (nginx, apache, ssh, etc.) \fI(required)\fR
+.IP \(bu 2
+\fB-p\fR, \fB--path\fR \- Request path to match
+.IP \(bu 2
+\fB-m\fR, \fB--method\fR \- HTTP method (GET, POST, etc.)
+.IP \(bu 2
+\fB-c\fR, \fB--status\fR \- HTTP status code (403, 404, etc.)
+.IP \(bu 2
+\fB-t\fR, \fB--ttl\fR \- Ban duration (default: 1y)
+.IP \(bu 2
+\fB-r\fR, \fB--max_retry\fR \- Max retries before ban (default: 0)
+.RE
+.PP
+\fBNote:\fR At least one of \fB-p\fR, \fB-m\fR, or \fB-c\fR must be specified.
+.PP
+\fBExamples:\fR
+.RS
+.IP \(bu 2
+\fBbanforge rule add -n "Forbidden" -s nginx -c 403 -t 30m\fR
+.IP \(bu 2
+\fBbanforge rule add -n "Admin Access" -s nginx -p "/admin/*" -t 2h -r 3\fR
+.IP \(bu 2
+\fBbanforge rule add -n "SSH Bruteforce" -s ssh -c "Failed" -t 1h -r 5\fR
+.RE
+.
+.SS "rule list \- List all rules"
+.PP
+\fBbanforge rule list\fR
+.PP
+Displays all configured rules in a table format.
+.
+.SS "rule edit \- Edit an existing rule"
+.PP
+\fBbanforge rule edit\fR \fB-n\fR \fI<name>\fR [\fIOPTIONS\fR]
+.PP
+Edit fields of an existing rule. Only specified fields will be updated.
+.PP
+\fBflags:\fR
+.RS
+.IP \(bu 2
+\fB-n\fR, \fB--name\fR \- Rule name to edit \fI(required)\fR
+.IP \(bu 2
+\fB-s\fR, \fB--service\fR \- New service name
+.IP \(bu 2
+\fB-p\fR, \fB--path\fR \- New path
+.IP \(bu 2
+\fB-m\fR, \fB--method\fR \- New method
+.IP \(bu 2
+\fB-c\fR, \fB--status\fR \- New status code
+.RE
+.PP
+\fBExamples:\fR
+.RS
+.IP \(bu 2
+\fBbanforge rule edit -n "SSH Bruteforce" -t 2h\fR
+.IP \(bu 2
+\fBbanforge rule edit -n "Forbidden" -c 403\fR
+.RE
+.
+.SS "rule remove \- Remove a rule"
+.PP
+\fBbanforge rule remove\fR \fI<name>\fR
+.PP
+Permanently delete a rule by name.
+.PP
+\fBExample:\fR \fBbanforge rule remove "Old Rule"\fR
+.
+.SH "BAN TIME FORMAT"
+.PP
+Use the following suffixes for ban duration:
+.RS
+.IP \(bu 2
+\fBs\fR \- Seconds
+.IP \(bu 2
+\fBm\fR \- Minutes
+.IP \(bu 2
+\fBh\fR \- Hours
+.IP \(bu 2
+\fBd\fR \- Days
+.IP \(bu 2
+\fBM\fR \- Months (30 days)
+.IP \(bu 2
+\fBy\fR \- Years (365 days)
+.RE
+.PP
+\fBExamples:\fR 30s, 5m, 2h, 1d, 1M, 1y
+.
+.SH "CONFIGURATION FILES"
+.PP
+Configuration files are stored in \fI/etc/banforge/\fR:
+.RS
+.IP \(bu 2
+\fIconfig.toml\fR \- main daemon configuration
+.IP \(bu 2
+\fIrules.toml\fR \- default rules
+.IP \(bu 2
+\fIrules.d/*.toml\fR \- individual rule files
+.RE
+.
+.SH "EXIT STATUS"
+.PP
+\fB0\fR \- Success
+.br
+\fB1\fR \- General error
+.br
+\fB2\fR \- Configuration error
+.
+.SH EXAMPLES
+.PP
+.RS
+.IP \(bu 2
+Initialize configuration: \fBbanforge init\fR
+.IP \(bu 2
+Start daemon: \fBbanforge daemon\fR
+.IP \(bu 2
+Ban an IP: \fBbanforge ban 192.168.1.100 -t 1h\fR
+.IP \(bu 2
+Add a rule: \fBbanforge rule add -n "404" -s nginx -c 404 -t 30m\fR
+.IP \(bu 2
+List blocked IPs: \fBbanforge list\fR
+.RE
+.
+.SH "SEE ALSO"
+.BR iptables (8),
+.BR nftables (8),
+.BR fail2ban (1),
+.BR nginx (8)
+.
+.SH AUTHOR
+.PP
+Ilya "d3m0k1d" Chernishev contact@d3m0k1d.ru

@@ -1,0 +1,339 @@
+.TH BANFORGE 5 "24 February 2026" "BanForge 1.0"
+.
+.SH NAME
+banforge \- BanForge configuration file format
+.
+.SH DESCRIPTION
+BanForge uses TOML configuration files stored in \fI/etc/banforge/\fR:
+.RS
+.IP \(bu 2
+\fIconfig.toml\fR \- main daemon configuration
+.IP \(bu 2
+\fIrules.toml\fR \- default rules (legacy)
+.IP \(bu 2
+\fIrules.d/*.toml\fR \- individual rule files (recommended)
+.RE
+.
+.SH "CONFIG.TOML FORMAT"
+.PP
+Main configuration file for BanForge daemon.
+.PP
+\fBStructure:\fR
+.RS
+.IP \(bu 2
+\fB[firewall]\fR \- firewall parameters
+.IP \(bu 2
+\fB[[service]]\fR \- service monitoring configuration (multiple allowed)
+.IP \(bu 2
+\fB[metrics]\fR \- Prometheus metrics configuration (optional)
+.RE
+.
+.SS "Firewall Section"
+.PP
+\fB[firewall]\fR
+.PP
+Defines firewall parameters. The \fBbanforge init\fR command automatically
+detects your installed firewall (nftables, iptables, ufw, firewalld).
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBname\fR \- Firewall type (nftables, iptables, ufw, firewalld)
+.IP \(bu 2
+\fBconfig\fR \- Path to firewall configuration file
+.RE
+.PP
+\fBExample:\fR
+.RS
+.nf
+[firewall]
+  name = "nftables"
+  config = "/etc/nftables.conf"
+.fi
+.RE
+.
+.SS "Service Section"
+.PP
+\fB[[service]]\fR
+.PP
+Configures service monitoring. Multiple service blocks are allowed.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBname\fR \- Service name (nginx, apache, ssh, etc.) \fI(required)\fR
+.IP \(bu 2
+\fBlogging\fR \- Log source type: "file" or "journald" \fI(required)\fR
+.IP \(bu 2
+\fBlog_path\fR \- Path to log file or journal unit name \fI(required)\fR
+.IP \(bu 2
+\fBenabled\fR \- Enable/disable service monitoring (true/false)
+.RE
+.PP
+\fBExamples:\fR
+.RS
+.nf
+# File-based logging
+[[service]]
+  name = "nginx"
+  logging = "file"
+  log_path = "/var/log/nginx/access.log"
+  enabled = true
+
+# Journald logging
+[[service]]
+  name = "nginx"
+  logging = "journald"
+  log_path = "nginx"
+  enabled = false
+.fi
+.RE
+.PP
+\fBNote:\fR When using journald logging, specify the service name in \fBlog_path\fR.
+.
+.SS "Metrics Section"
+.PP
+\fB[metrics]\fR
+.PP
+Configures Prometheus metrics endpoint (optional).
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBenabled\fR \- Enable/disable metrics (true/false)
+.IP \(bu 2
+\fBport\fR \- Port for metrics endpoint
+.RE
+.PP
+\fBExample:\fR
+.RS
+.nf
+[metrics]
+  enabled = true
+  port = 9090
+.fi
+.RE
+.
+.SH "RULES.TOML FORMAT"
+.PP
+Detection rules define conditions for blocking IP addresses.
+Rules are stored in \fI/etc/banforge/rules.d/\fR as individual \fI.toml\fR files.
+.
+.SS "Rule Section"
+.PP
+\fB[[rule]]\fR
+.PP
+Defines a single detection rule.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBname\fR \- Rule name (used as filename) \fI(required)\fR
+.IP \(bu 2
+\fBservice\fR \- Service name (nginx, apache, ssh, etc.) \fI(required)\fR
+.IP \(bu 2
+\fBpath\fR \- Request path to match (e.g., "/admin/*", "*.php")
+.IP \(bu 2
+\fBstatus\fR \- HTTP status code (403, 404, 304, etc.)
+.IP \(bu 2
+\fBmethod\fR \- HTTP method (GET, POST, etc.)
+.IP \(bu 2
+\fBmax_retry\fR \- Max retries before ban (0 = ban on first request)
+.IP \(bu 2
+\fBban_time\fR \- Ban duration (e.g., "1m", "1h", "1d", "1M", "1y")
+.RE
+.PP
+\fBNote:\fR At least one of \fBpath\fR, \fBstatus\fR, or \fBmethod\fR must be specified.
+.PP
+\fBExamples:\fR
+.RS
+.nf
+# Ban on HTTP 304 status
+[[rule]]
+  name = "304 http"
+  service = "nginx"
+  path = ""
+  status = "304"
+  max_retry = 3
+  method = ""
+  ban_time = "1m"
+
+# Ban on path pattern (admin panel)
+[[rule]]
+  name = "Admin Access"
+  service = "nginx"
+  path = "/admin/*"
+  status = ""
+  method = ""
+  max_retry = 2
+  ban_time = "2h"
+
+# SSH brute force protection
+[[rule]]
+  name = "SSH Bruteforce"
+  service = "ssh"
+  path = ""
+  status = "Failed"
+  method = ""
+  max_retry = 5
+  ban_time = "1h"
+.fi
+.RE
+.
+.SH "BAN TIME FORMAT"
+.PP
+Use the following suffixes for ban duration:
+.RS
+.IP \(bu 2
+\fBs\fR \- Seconds
+.IP \(bu 2
+\fBm\fR \- Minutes
+.IP \(bu 2
+\fBh\fR \- Hours
+.IP \(bu 2
+\fBd\fR \- Days
+.IP \(bu 2
+\fBM\fR \- Months (30 days)
+.IP \(bu 2
+\fBy\fR \- Years (365 days)
+.RE
+.
+.SH "ACTIONS(NOT WORKING ON THIS VERSION)"
+.PP
+Rules can trigger custom actions when an IP is banned.
+.
+.SS "Script Action"
+.PP
+Execute a custom script when an IP is banned.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBtype\fR \- "script"
+.IP \(bu 2
+\fBenabled\fR \- Enable/disable action (true/false)
+.IP \(bu 2
+\fBinterpretator\fR \- Script interpretator (e.g., "/bin/bash")
+.IP \(bu 2
+\fBscript\fR \- Path to script file
+.RE
+.PP
+\fBExample:\fR
+.RS
+.nf
+[[rule]]
+  name = "Notify on Ban"
+  service = "nginx"
+  status = "403"
+  ban_time = "1h"
+  
+  [[rule.action]]
+    type = "script"
+    enabled = true
+    interpretator = "/bin/bash"
+    script = "/opt/banforge/scripts/notify.sh"
+.fi
+.RE
+.
+.SS "Webhook Action"
+.PP
+Send HTTP webhook when an IP is banned.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBtype\fR \- "webhook"
+.IP \(bu 2
+\fBenabled\fR \- Enable/disable action (true/false)
+.IP \(bu 2
+\fBurl\fR \- Webhook URL
+.IP \(bu 2
+\fBmethod\fR \- HTTP method (POST, GET)
+.IP \(bu 2
+\fBheaders\fR \- Custom headers (key-value pairs)
+.IP \(bu 2
+\fBbody\fR \- Request body (supports templates)
+.RE
+.PP
+\fBExample:\fR
+.RS
+.nf
+[[rule.action]]
+  type = "webhook"
+  enabled = true
+  url = "https://hooks.example.com/ban"
+  method = "POST"
+  
+  [rule.action.headers]
+    Content-Type = "application/json"
+    Authorization = "Bearer TOKEN"
+  
+  [rule.action.body]
+    ip = "{{.IP}}"
+    reason = "{{.Rule}}"
+.fi
+.RE
+.
+.SS "Email Action"
+.PP
+Send email notification when an IP is banned.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBtype\fR \- "email"
+.IP \(bu 2
+\fBenabled\fR \- Enable/disable action (true/false)
+.IP \(bu 2
+\fBemail\fR \- Recipient email address
+.IP \(bu 2
+\fBemail_sender\fR \- Sender email address
+.IP \(bu 2
+\fBemail_subject\fR \- Email subject
+.IP \(bu 2
+\fBsmtp_host\fR \- SMTP server host
+.IP \(bu 2
+\fBsmtp_port\fR \- SMTP server port
+.IP \(bu 2
+\fBsmtp_user\fR \- SMTP username
+.IP \(bu 2
+\fBsmtp_password\fR \- SMTP password
+.IP \(bu 2
+\fBsmtp_tls\fR \- Enable TLS (true/false)
+.RE
+.PP
+\fBExample:\fR
+.RS
+.nf
+[[rule.action]]
+  type = "email"
+  enabled = true
+  email = "admin@example.com"
+  email_sender = "banforge@example.com"
+  email_subject = "IP Banned"
+  smtp_host = "smtp.example.com"
+  smtp_port = 587
+  smtp_user = "banforge"
+  smtp_password = "secret"
+  smtp_tls = true
+.fi
+.RE
+.
+.SH FILES
+.PP
+.RS
+.IP \(bu 2
+\fI/etc/banforge/config.toml\fR \- main configuration
+.IP \(bu 2
+\fI/etc/banforge/rules.d/\fR \- rule files directory
+.RE
+.
+.SH "SEE ALSO"
+.BR banforge (1),
+.BR iptables (8),
+.BR nftables (8),
+.BR systemd (1)
+.
+.SH AUTHOR
+.PP
+Ilya "d3m0k1d" Chernishev contact@d3m0k1d.ru

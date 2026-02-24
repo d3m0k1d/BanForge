@@ -28,7 +28,7 @@ builds:
     env:
       - CGO_ENABLED=0
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 nfpms:
@@ -48,6 +48,15 @@ nfpms:
     scripts:
       postinstall: build/postinstall.sh
       postremove: build/postremove.sh
+    contents:
+      - src: docs/man/banforge.1
+        dst: /usr/share/man/man1/banforge.1
+        file_info:
+          mode: 0644
+      - src: docs/man/banforge.5
+        dst: /usr/share/man/man5/banforge.5
+        file_info:
+          mode: 0644
 release: 
   gitea:
     owner: d3m0k1d
@@ -60,7 +69,6 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
   algorithm: sha256
