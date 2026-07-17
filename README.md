@@ -15,8 +15,7 @@ Log-based IPS system written in Go for Linux-based system.
 
 # Overview
 BanForge is a simple IPS for replacement fail2ban in Linux system.
-All release are available on my self-hosted [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge) after release v1.0.0 are available on Github release page.
-If you have any questions or suggestions, create issue on [Github](https://github.com/d3m0k1d/BanForge/issues).
+All release not available now because i'm in the process of migrating repositories to my GitLab.
 
 ## Roadmap
 - [x] Rule system
