@@ -17,7 +17,7 @@ build:
   image: golang:latest
   script:
     - go mod download
-    - go build -o BanForge
+    - go build ./cmd/banforge/main.go -o banforge
 
 
 test:
