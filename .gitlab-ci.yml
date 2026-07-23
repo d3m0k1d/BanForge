@@ -1,6 +1,6 @@
 stages:
-  - build
   - lint
+  - build
   - test
   - release
 
@@ -10,3 +10,18 @@ lint:
   image: golangci/golangci-lint:latest
   script:
     - golangci-lint run
+
+
+build:
+  stage: build
+  image: golang:latest
+  script:
+    - go build -o BanForge
+
+
+test:
+  stage: test
+  image: golang:latest
+  script:
+    - go test
+ 
