@@ -16,6 +16,7 @@ build:
   stage: build
   image: golang:latest
   script:
+    - go mod download
     - go build -o BanForge
 
 
