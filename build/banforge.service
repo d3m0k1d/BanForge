@@ -6,7 +6,7 @@ Documentation=https://github.com/d3m0k1d/BanForge
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/banforge daemon
+ExecStart=/usr/bin/banforge daemon
 User=root
 Group=root
 Restart=always
