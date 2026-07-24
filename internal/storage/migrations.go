@@ -17,7 +17,6 @@ CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
 CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at);
 `
 
-// Миграция для bans.db
 const CreateBansTable = `
 CREATE TABLE IF NOT EXISTS bans (
 	id INTEGER PRIMARY KEY,
