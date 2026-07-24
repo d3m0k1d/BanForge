@@ -3,10 +3,10 @@ package blocker
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
 	"github.com/d3m0k1d/BanForge/internal/metrics"
@@ -25,89 +25,109 @@ func NewNftables(logger *logger.Logger, config string) *Nftables {
 }
 
 func (n *Nftables) Ban(ip string) error {
-	err := validateIP(ip)
+	set, address, err := nftablesSetForIP(ip)
 	if err != nil {
 		return err
 	}
 	metrics.IncBanAttempt("nftables")
-	// #nosec G204 - ip is validated
-	cmd := exec.Command("nft", "add", "rule", "inet", "banforge", "banned",
-		"ip", "saddr", ip, "drop")
+
+	exists, err := nftablesElementExists(set, address)
+	if err != nil {
+		metrics.IncError()
+		return err
+	}
+	if exists {
+		n.logger.Info("IP already banned", "ip", address, "set", set)
+		return nil
+	}
+
+	// #nosec G204 - address is parsed and normalized by net.ParseIP
+	cmd := exec.Command(
+		"nft", "add", "element", "inet", "banforge", set, "{", address, "}",
+	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		n.logger.Error("failed to ban IP",
-			"ip", ip,
+			"ip", address,
+			"set", set,
 			"error", err.Error(),
 			"output", string(output))
 		metrics.IncError()
-		return err
+		return fmt.Errorf("failed to add IP to nftables set: %w", err)
 	}
 
-	n.logger.Info("IP banned", "ip", ip)
+	n.logger.Info("IP banned", "ip", address, "set", set)
 	metrics.IncBan("nftables")
-
-	err = saveNftablesConfig(n.config)
-	if err != nil {
-		n.logger.Error("failed to save config",
-			"config_path", n.config,
-			"error", err.Error())
-		metrics.IncError()
-		return err
-	}
-
-	n.logger.Info("config saved", "config_path", n.config)
 	return nil
 }
 
 func (n *Nftables) Unban(ip string) error {
-	err := validateIP(ip)
+	set, address, err := nftablesSetForIP(ip)
 	if err != nil {
 		return err
 	}
 	metrics.IncUnbanAttempt("nftables")
 
-	handle, err := n.findRuleHandle(ip)
+	exists, err := nftablesElementExists(set, address)
 	if err != nil {
-		n.logger.Error("failed to find rule handle",
-			"ip", ip,
-			"error", err.Error())
 		metrics.IncError()
 		return err
 	}
-
-	if handle == "" {
-		n.logger.Warn("no rule found for IP", "ip", ip)
-		metrics.IncError()
-		return fmt.Errorf("no rule found for IP %s", ip)
+	if !exists {
+		n.logger.Info("IP already unbanned", "ip", address, "set", set)
+		return nil
 	}
-	// #nosec G204 - handle is extracted from nftables output and validated
-	cmd := exec.Command("nft", "delete", "rule", "inet", "banforge", "banned",
-		"handle", handle)
+
+	// #nosec G204 - address is parsed and normalized by net.ParseIP
+	cmd := exec.Command(
+		"nft", "delete", "element", "inet", "banforge", set, "{", address, "}",
+	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		n.logger.Error("failed to unban IP",
-			"ip", ip,
-			"handle", handle,
+			"ip", address,
+			"set", set,
 			"error", err.Error(),
 			"output", string(output))
 		metrics.IncError()
-		return err
+		return fmt.Errorf("failed to delete IP from nftables set: %w", err)
 	}
 
-	n.logger.Info("IP unbanned", "ip", ip, "handle", handle)
+	n.logger.Info("IP unbanned", "ip", address, "set", set)
 	metrics.IncUnban("nftables")
+	return nil
+}
 
-	err = saveNftablesConfig(n.config)
-	if err != nil {
-		n.logger.Error("failed to save config",
-			"config_path", n.config,
-			"error", err.Error())
-		metrics.IncError()
-		return err
+func nftablesSetForIP(ip string) (string, string, error) {
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return "", "", fmt.Errorf("invalid IP: %s", ip)
 	}
 
-	n.logger.Info("config saved", "config_path", n.config)
-	return nil
+	if ipv4 := parsed.To4(); ipv4 != nil {
+		return "blocked_ipv4", ipv4.String(), nil
+	}
+
+	return "blocked_ipv6", parsed.String(), nil
+}
+
+func nftablesElementExists(set string, ip string) (bool, error) {
+	// #nosec G204 - set is selected internally and ip is normalized by net.ParseIP
+	cmd := exec.Command(
+		"nft", "get", "element", "inet", "banforge", set, "{", ip, "}",
+	)
+	if err := cmd.Run(); err == nil {
+		return true, nil
+	}
+
+	// #nosec G204 - set is selected internally by nftablesSetForIP
+	cmd = exec.Command("nft", "list", "set", "inet", "banforge", set)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("failed to inspect nftables set %s: %w: %s", set, err, output)
+	}
+
+	return false, nil
 }
 
 func (n *Nftables) Setup(config string) error {
@@ -115,15 +135,45 @@ func (n *Nftables) Setup(config string) error {
 		return fmt.Errorf("path error: %w", err)
 	}
 
+	const banforgeConfigPath = "/var/lib/banforge/banforge.nft"
+	const chains = `# managed by BanForge IPS system
+table inet banforge {
+	set blocked_ipv4 {
+		type ipv4_addr
+		flags timeout
+	}
+
+	set blocked_ipv6 {
+		type ipv6_addr
+		flags timeout
+	}
+
+	chain input {
+		type filter hook input priority -100; policy accept;
+
+		ip saddr @blocked_ipv4 drop
+		ip6 saddr @blocked_ipv6 drop
+	}
+}
+`
 	const include = `include "/var/lib/banforge/banforge.nft"`
 	const nftConfig = "\n# managed by BanForge IPS system\n" + include + "\n"
 
+	if err := os.WriteFile(banforgeConfigPath, []byte(chains), 0600); err != nil {
+		return fmt.Errorf("failed to write BanForge nftables config: %w", err)
+	}
+	if err := os.Chmod(banforgeConfigPath, 0600); err != nil {
+		return fmt.Errorf("failed to set BanForge nftables config permissions: %w", err)
+	}
+
+	// #nosec G304 - config is an absolute administrator-managed path validated above
 	file, err := os.ReadFile(config)
 	if err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	if !bytes.Contains(file, []byte(include)) {
+		// #nosec G304 - config is an absolute administrator-managed path validated above
 		conf, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0)
 		if err != nil {
 			return fmt.Errorf("failed to open config file: %w", err)
@@ -139,36 +189,31 @@ func (n *Nftables) Setup(config string) error {
 		}
 	}
 
-	// #nosec G204 - config path is validated above
-	cmd := exec.Command("nft", "-f", config)
+	tableExists := exec.Command("nft", "list", "table", "inet", "banforge").Run() == nil
+	if tableExists {
+		ipv4SetExists := exec.Command(
+			"nft", "list", "set", "inet", "banforge", "blocked_ipv4",
+		).Run() == nil
+		ipv6SetExists := exec.Command(
+			"nft", "list", "set", "inet", "banforge", "blocked_ipv6",
+		).Run() == nil
+		if ipv4SetExists && ipv6SetExists {
+			return nil
+		}
+
+		output, err := exec.Command("nft", "delete", "table", "inet", "banforge").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to replace old BanForge table: %s", string(output))
+		}
+	}
+
+	cmd := exec.Command("nft", "-f", banforgeConfigPath)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to load nftables config: %s", string(output))
 	}
 
 	return nil
-}
-
-func (n *Nftables) findRuleHandle(ip string) (string, error) {
-	cmd := exec.Command("nft", "-a", "list", "chain", "inet", "banforge", "banned")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("failed to list chain rules: %w", err)
-	}
-
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, ip) && strings.Contains(line, "drop") {
-			if idx := strings.Index(line, "# handle"); idx != -1 {
-				parts := strings.Fields(line[idx:])
-				if len(parts) >= 3 && parts[1] == "handle" {
-					return parts[2], nil
-				}
-			}
-		}
-	}
-
-	return "", nil
 }
 
 func (n *Nftables) PortOpen(port int, protocol string) error {
@@ -200,14 +245,6 @@ func (n *Nftables) PortOpen(port int, protocol string) error {
 			return err
 		}
 		n.logger.Info("Add port " + s + " " + string(output))
-		err = saveNftablesConfig(n.config)
-		if err != nil {
-			n.logger.Error("failed to save config",
-				"config_path", n.config,
-				"error", err.Error())
-			metrics.IncError()
-			return err
-		}
 	}
 	return nil
 }
@@ -241,53 +278,7 @@ func (n *Nftables) PortClose(port int, protocol string) error {
 			return err
 		}
 		n.logger.Info("Add port " + s + " " + string(output))
-		err = saveNftablesConfig(n.config)
-		if err != nil {
-			n.logger.Error("failed to save config",
-				"config_path", n.config,
-				"error", err.Error())
-			metrics.IncError()
-			return err
-		}
 
 	}
-	return nil
-}
-
-func saveNftablesConfig(configPath string) error {
-	err := validateConfigPath(configPath)
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("nft", "list", "ruleset")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to get nftables ruleset: %w", err)
-	}
-	// #nosec G204 - managed by system adminstartor
-	cmd = exec.Command("tee", configPath)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("failed to create stdin pipe: %w", err)
-	}
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start tee command: %w", err)
-	}
-
-	_, err = stdin.Write(output)
-	if err != nil {
-		return fmt.Errorf("failed to write to config file: %w", err)
-	}
-	err = stdin.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close stdin pipe: %w", err)
-	}
-
-	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
 	return nil
 }
