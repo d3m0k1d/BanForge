@@ -72,6 +72,11 @@ var DaemonCmd = &cobra.Command{
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name
 		b = blocker.GetBlocker(fw, cfg.Firewall.Config)
+		err = b.Setup(cfg.Firewall.Config)
+		if err != nil {
+			log.Error("Failed to setup firewall", "error", err)
+			os.Exit(1)
+		}
 		ips, err := banDb_r.RestoreBans()
 		if err != nil {
 			log.Error("Failed to restore bans", "error", err)
