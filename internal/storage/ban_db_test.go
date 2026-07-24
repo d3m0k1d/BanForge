@@ -209,6 +209,44 @@ func TestBanReader_IsBanned(t *testing.T) {
 	}
 }
 
+func TestBanReader_RestoreBans(t *testing.T) {
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "bans_test.db")
+
+	writer, err := NewBanWriterWithDBPath(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to create BanWriter: %v", err)
+	}
+	defer writer.Close()
+
+	if err := writer.CreateTable(); err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+	if err := writer.AddBan("192.0.2.10", "1h", "active"); err != nil {
+		t.Fatalf("Failed to add active ban: %v", err)
+	}
+	if err := writer.AddBan("192.0.2.11", "-1h", "expired"); err != nil {
+		t.Fatalf("Failed to add expired ban: %v", err)
+	}
+
+	reader, err := NewBanReaderWithDBPath(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to create BanReader: %v", err)
+	}
+	defer reader.Close()
+
+	ips, err := reader.RestoreBans()
+	if err != nil {
+		t.Fatalf("RestoreBans failed: %v", err)
+	}
+	if len(ips) != 1 {
+		t.Fatalf("RestoreBans returned %d IPs, want 1", len(ips))
+	}
+	if ips[0] != "192.0.2.10" {
+		t.Errorf("RestoreBans returned %q, want active IP", ips[0])
+	}
+}
+
 func TestBanWriter_Close(t *testing.T) {
 	tempDir := t.TempDir()
 	dbPath := filepath.Join(tempDir, "bans_test.db")

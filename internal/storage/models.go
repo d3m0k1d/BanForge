@@ -15,4 +15,5 @@ type Ban struct {
 	IP       string `db:"ip"`
 	Reason   string `db:"reason"`
 	BannedAt string `db:"banned_at"`
+	Expired  string `db:"expired_at"`
 }

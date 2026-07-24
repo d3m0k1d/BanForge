@@ -218,6 +218,43 @@ func (d *BanReader) BanList() error {
 	return nil
 }
 
+func (d *BanReader) RestoreBans() ([]string, error) {
+	now := time.Now().Format(time.RFC3339)
+	rows, err := d.db.Query(
+		"SELECT ip FROM bans WHERE expired_at > ?",
+		now,
+	)
+	if err != nil {
+		d.logger.Error("Failed to get active bans", "error", err)
+		metrics.IncError()
+		return nil, fmt.Errorf("failed to get active bans: %w", err)
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			d.logger.Error("Failed to close rows", "error", err)
+		}
+	}()
+
+	var ips []string
+	for rows.Next() {
+		var ip string
+		if err := rows.Scan(&ip); err != nil {
+			d.logger.Error("Failed to scan active ban", "error", err)
+			metrics.IncError()
+			return nil, fmt.Errorf("failed to scan active ban: %w", err)
+		}
+		ips = append(ips, ip)
+	}
+	if err := rows.Err(); err != nil {
+		d.logger.Error("Failed to iterate active bans", "error", err)
+		metrics.IncError()
+		return nil, fmt.Errorf("failed to iterate active bans: %w", err)
+	}
+
+	metrics.IncDBOperation("select_active", "bans")
+	return ips, nil
+}
+
 func (d *BanReader) Close() error {
 	d.logger.Info("Closing database connection")
 	err := d.db.Close()

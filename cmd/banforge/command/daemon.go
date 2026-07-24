@@ -72,6 +72,17 @@ var DaemonCmd = &cobra.Command{
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name
 		b = blocker.GetBlocker(fw, cfg.Firewall.Config)
+		ips, err := banDb_r.RestoreBans()
+		if err != nil {
+			log.Error("Failed to restore bans", "error", err)
+			os.Exit(1)
+		}
+		for _, ip := range ips {
+			err = b.Ban(ip)
+			if err != nil {
+				log.Error("Failed to ban ip", "ip", ip, "error", err)
+			}
+		}
 		r, err := config.LoadRuleConfig()
 		if err != nil {
 			log.Error("Failed to load rules", "error", err)
