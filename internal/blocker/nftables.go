@@ -207,6 +207,7 @@ table inet banforge {
 		}
 	}
 
+	// #nosec G204 - config is an absolute administrator-managed path validated above
 	cmd := exec.Command("nft", "-f", config)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

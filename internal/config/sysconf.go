@@ -106,7 +106,7 @@ func FindFirewall() error {
 
 			fmt.Printf("Detected firewall: %s\n", DetectedFirewall)
 
-			cfg := &Config{}
+			cfg := newConfigWithDefaults()
 			_, err := toml.DecodeFile("/etc/banforge/config.toml", cfg)
 			if err != nil {
 				return fmt.Errorf("failed to decode config: %w", err)
@@ -146,10 +146,13 @@ func FindFirewall() error {
 }
 
 func LoadConfig() (*Config, error) {
-	cfg := &Config{}
+	cfg := newConfigWithDefaults()
 	_, err := toml.DecodeFile("/etc/banforge/config.toml", cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode config: %w", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 	return cfg, nil
 }

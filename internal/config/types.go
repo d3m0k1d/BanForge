@@ -12,10 +12,16 @@ type Service struct {
 	Enabled bool   `toml:"enabled"`
 }
 
+type Storage struct {
+	RetentionTime   string `toml:"retention_time"`
+	CleanupInterval string `toml:"cleanup_interval"`
+}
+
 type Config struct {
 	Firewall Firewall  `toml:"firewall"`
 	Metrics  Metrics   `toml:"metrics"`
 	Service  []Service `toml:"service"`
+	Storage  Storage   `toml:"storage"`
 }
 
 // Rules

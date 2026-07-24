@@ -4,6 +4,10 @@ const Base_config = `
 # This is a TOML config file for BanForge
 # [https://github.com/d3m0k1d/BanForge](https://github.com/d3m0k1d/BanForge)
 
+[storage]
+retention_time = "2d"
+cleanup_interval = "1h"
+
 [firewall]
 name = ""
 config = "/etc/nftables.conf"
