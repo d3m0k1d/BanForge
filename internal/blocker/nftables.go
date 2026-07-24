@@ -207,7 +207,7 @@ table inet banforge {
 		}
 	}
 
-	cmd := exec.Command("nft", "-f", banforgeConfigPath)
+	cmd := exec.Command("nft", "-f", config)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to load nftables config: %s", string(output))
