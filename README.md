@@ -32,11 +32,10 @@ All release not available now because i'm in the process of migrating repositori
 - ufw/iptables/nftables/firewalld
 
 # Installation
-Search for a release on the [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases) releases page and download it.
-In release page you can find rpm, deb, apk packages, for amd or arm architecture.
+Releases are temporarily unavailable while the project is being migrated to GitLab and undergoing stabilization. Once a new stable version is ready, it will be published on GitHub.
 
 ## Installation guide for packages
-
+# All packages not available now
 ### Debian/Ubuntu(.deb)
 ```bash
 # Download the latest DEB package
