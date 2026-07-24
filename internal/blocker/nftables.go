@@ -1,7 +1,9 @@
 package blocker
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -109,46 +111,36 @@ func (n *Nftables) Unban(ip string) error {
 }
 
 func (n *Nftables) Setup(config string) error {
-	err := validateConfigPath(config)
-	if err != nil {
+	if err := validateConfigPath(config); err != nil {
 		return fmt.Errorf("path error: %w", err)
 	}
 
-	nftConfig := `table inet banforge {
-	chain input {
-		type filter hook input priority filter; policy accept;
-		jump banned
-	}
+	const include = `include "/var/lib/banforge/banforge.nft"`
+	const nftConfig = "\n# managed by BanForge IPS system\n" + include + "\n"
 
-	chain banned {
-	}
-}
-`
-	// #nosec G204 - config is managed by adminstartor
-	cmd := exec.Command("tee", config)
-	stdin, err := cmd.StdinPipe()
+	file, err := os.ReadFile(config)
 	if err != nil {
-		return fmt.Errorf("failed to create stdin pipe: %w", err)
+		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start tee command: %w", err)
+	if !bytes.Contains(file, []byte(include)) {
+		conf, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0)
+		if err != nil {
+			return fmt.Errorf("failed to open config file: %w", err)
+		}
+
+		if _, err := conf.WriteString(nftConfig); err != nil {
+			_ = conf.Close()
+			return fmt.Errorf("failed to add BanForge include: %w", err)
+		}
+
+		if err := conf.Close(); err != nil {
+			return fmt.Errorf("failed to close config file: %w", err)
+		}
 	}
 
-	_, err = stdin.Write([]byte(nftConfig))
-	if err != nil {
-		return fmt.Errorf("failed to write config: %w", err)
-	}
-	err = stdin.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close stdin pipe: %w", err)
-	}
-
-	if err = cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-	// #nosec G204 - config is managed by adminstartor
-	cmd = exec.Command("nft", "-f", config)
+	// #nosec G204 - config path is validated above
+	cmd := exec.Command("nft", "-f", config)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to load nftables config: %s", string(output))
