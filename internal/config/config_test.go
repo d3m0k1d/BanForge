@@ -9,6 +9,35 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+func TestCreateFileWithPermissionsPreservesExistingContent(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.db")
+	const content = "existing state"
+
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := createFileWithPermissions(path, 0640); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != content {
+		t.Fatalf("file content = %q, want %q", data, content)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0640 {
+		t.Fatalf("file permissions = %o, want %o", got, os.FileMode(0640))
+	}
+}
+
 // ============================================
 // Tests for SanitizeRuleFilename
 // ============================================

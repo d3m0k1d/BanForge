@@ -18,12 +18,12 @@ const (
 
 func createFileWithPermissions(path string, perm os.FileMode) error {
 	// #nosec G304 - path is controlled by config package not user
-	file, err := os.Create(path)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, perm)
 	if err != nil {
 		return err
 	}
 
-	if err := os.Chmod(path, perm); err != nil {
+	if err := file.Chmod(perm); err != nil {
 		_ = file.Close()
 		return err
 	}
@@ -127,6 +127,14 @@ func FindFirewall() error {
 
 			if err := file.Close(); err != nil {
 				return fmt.Errorf("failed to close file: %w", err)
+			}
+			if DetectedFirewall == "nftables" {
+				if err := createFileWithPermissions(
+					"/var/lib/banforge/banforge.nft",
+					0640,
+				); err != nil {
+					return fmt.Errorf("failed to create nftables config file: %w", err)
+				}
 			}
 
 			fmt.Printf("Config updated with firewall: %s\n", DetectedFirewall)
