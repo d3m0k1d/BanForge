@@ -39,7 +39,9 @@ test:
 
 release:github:
   stage: release
-  image: goreleaser/goreleaser:latest
+  image:
+    name: goreleaser/goreleaser:latest
+    entrypoint: [""]
   needs:
     - lint
     - build
@@ -60,7 +62,9 @@ release:github:
 
 release:gitlab:
   stage: release
-  image: goreleaser/goreleaser:latest
+  image:
+    name: goreleaser/goreleaser:latest
+    entrypoint: [""]
   needs:
     - lint
     - build
