@@ -45,9 +45,12 @@ release:github:
   variables:
     GORELEASER_FORCE_TOKEN: github
   needs:
-    - lint
-    - build
-    - test
+    - job: lint
+      artifacts: false
+    - job: build
+      artifacts: false
+    - job: test
+      artifacts: false
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$/'
   before_script:
@@ -70,9 +73,12 @@ release:gitlab:
   variables:
     GORELEASER_FORCE_TOKEN: gitlab
   needs:
-    - lint
-    - build
-    - test
+    - job: lint
+      artifacts: false
+    - job: build
+      artifacts: false
+    - job: test
+      artifacts: false
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$/'
   before_script:
