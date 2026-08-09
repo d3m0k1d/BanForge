@@ -43,7 +43,7 @@ release:github:
     name: goreleaser/goreleaser:latest
     entrypoint: [""]
   variables:
-    GITLAB_TOKEN: ""
+    GORELEASER_FORCE_TOKEN: github
   needs:
     - lint
     - build
@@ -68,7 +68,7 @@ release:gitlab:
     name: goreleaser/goreleaser:latest
     entrypoint: [""]
   variables:
-    GITHUB_TOKEN: ""
+    GORELEASER_FORCE_TOKEN: gitlab
   needs:
     - lint
     - build
