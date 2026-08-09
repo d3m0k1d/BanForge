@@ -1,4 +1,4 @@
-.TH BANFORGE 5 "24 February 2026" "BanForge 1.0"
+.TH BANFORGE 5 "9 August 2026" "BanForge 0.8.0"
 .
 .SH NAME
 banforge \- BanForge configuration file format
@@ -9,9 +9,7 @@ BanForge uses TOML configuration files stored in \fI/etc/banforge/\fR:
 .IP \(bu 2
 \fIconfig.toml\fR \- main daemon configuration
 .IP \(bu 2
-\fIrules.toml\fR \- default rules (legacy)
-.IP \(bu 2
-\fIrules.d/*.toml\fR \- individual rule files (recommended)
+\fIrules.d/*.toml\fR \- individual rule files
 .RE
 .
 .SH "CONFIG.TOML FORMAT"
@@ -21,11 +19,39 @@ Main configuration file for BanForge daemon.
 \fBStructure:\fR
 .RS
 .IP \(bu 2
+\fB[storage]\fR \- request retention and cleanup settings
+.IP \(bu 2
 \fB[firewall]\fR \- firewall parameters
 .IP \(bu 2
 \fB[[service]]\fR \- service monitoring configuration (multiple allowed)
 .IP \(bu 2
 \fB[metrics]\fR \- Prometheus metrics configuration (optional)
+.RE
+.
+.SS "Storage Section"
+.PP
+\fB[storage]\fR
+.PP
+Defines how long monitored requests are kept in the database and how often
+expired entries are removed.
+.PP
+\fBFields:\fR
+.RS
+.IP \(bu 2
+\fBretention_time\fR \- how long to keep request entries before cleanup
+.IP \(bu 2
+\fBcleanup_interval\fR \- how often the cleanup job runs
+.RE
+.PP
+Both fields support the \fBBAN TIME FORMAT\fR suffixes (s, m, h, d, M, y).
+.PP
+\fBExample:\fR
+.RS
+.nf
+[storage]
+  retention_time = "2d"
+  cleanup_interval = "1h"
+.fi
 .RE
 .
 .SS "Firewall Section"

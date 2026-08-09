@@ -36,6 +36,9 @@ func SendWebhook(action config.Action) error {
 	if action.Body != "" {
 		bodyReader = strings.NewReader(action.Body)
 		if action.Headers["Content-Type"] == "" && action.Headers["content-type"] == "" {
+			if action.Headers == nil {
+				action.Headers = make(map[string]string)
+			}
 			action.Headers["Content-Type"] = "application/json"
 		}
 	}

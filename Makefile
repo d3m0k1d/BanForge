@@ -1,26 +1,21 @@
-.PHONY: build build-daemon build-tui clean help install-man check-man
+.PHONY: build build-daemon clean help install-man check-man
 
 help:
 	@echo "BanForge build targets:"
-	@echo "  make build         - Build both daemon and TUI"
+	@echo "  make build         - Build daemon binary"
 	@echo "  make build-daemon  - Build only daemon"
-	@echo "  make build-tui     - Build only TUI"
 	@echo "  make clean         - Remove binaries"
 	@echo "  make test          - Run tests"
 	@echo "  make install-man   - Install manpages to system"
 	@echo "  make check-man     - Validate manpage syntax"	
 
-build: build-daemon build-tui
+build: build-daemon
 	@echo "✅ Build complete!"
 
 build-daemon:
 	@mkdir -p bin
 	go mod tidy
 	go build -o bin/banforge ./cmd/banforge
-
-build-tui:
-	@mkdir -p bin
-	go build -o bin/banforge-tui ./cmd/banforge-tui
 
 clean:
 	rm -rf bin/

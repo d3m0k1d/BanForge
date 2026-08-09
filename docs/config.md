@@ -5,6 +5,10 @@ Main configuration file for BanForge.
 
 Example:
 ```toml
+[storage]
+  retention_time = "2d"
+  cleanup_interval = "1h"
+
 [firewall]
   name = "nftables"
   config = "/etc/nftables.conf"
@@ -22,14 +26,20 @@ Example:
   enabled = false
 ```
 **Description**
+The [storage] section defines request data retention settings:
+- `retention_time` - how long request entries are kept in the database before cleanup (default: `"2d"`)
+- `cleanup_interval` - how often the cleanup job runs (default: `"1h"`)
+
+Both fields support the ban time suffixes (`s`, `m`, `h`, `d`, `M`, `y`).
+
 The [firewall] section defines firewall parameters. The banforge init command automatically detects your installed firewall (nftables, iptables, ufw, firewalld). For firewalls that require a configuration file, specify the path in the config parameter.
 
 The [[service]] section is configured manually. Currently, only nginx is supported. To add a service, create a [[service]] block and specify the log_path to the nginx log file you want to monitor.
 logging require in format "file" or "journald"
 if you use journald logging, log_path require in format "service_name"
 
-## rules.toml
-Rules configuration file for BanForge.
+## Rules
+Rules are stored as individual TOML files in `/etc/banforge/rules.d/`.
 
 If you wanna configure rules by cli command see [here](https://github.com/d3m0k1d/BanForge/blob/main/docs/cli.md)
 

@@ -2,6 +2,11 @@
 version: 2
 project_name: BanForge
 
+gitlab_urls:
+  api: https://git.d3m0k1d.ru/api/v4
+  download: https://git.d3m0k1d.ru/d3m0k1d/banforge/-/releases
+  skip_tls_verify: false
+
 builds:
   - id: banforge
     main: ./cmd/banforge/main.go
@@ -16,9 +21,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - "-s -w" 
+      - "-s -w"
     env:
       - CGO_ENABLED=0
+
 archives:
   - formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
@@ -27,7 +33,7 @@ nfpms:
   - id: banforge
     package_name: banforge
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    homepage: https://github.com/d3m0k1d/BanForge
+    homepage: https://git.d3m0k1d.ru/d3m0k1d/banforge
     description: BanForge IPS log-based system
     maintainer: d3m0k1d <contact@d3m0k1d.ru>
     license: GPLv3.0
@@ -49,10 +55,11 @@ nfpms:
         dst: /usr/share/man/man5/banforge.5
         file_info:
           mode: 0644
-release: 
-  github:
+
+release:
+  gitlab:
     owner: d3m0k1d
-    name: BanForge
+    name: banforge
   mode: keep-existing
 
 changelog:
@@ -61,6 +68,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
   algorithm: sha256

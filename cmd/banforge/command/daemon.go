@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/d3m0k1d/BanForge/internal/blocker"
@@ -61,7 +62,21 @@ var DaemonCmd = &cobra.Command{
 			log.Error("Failed to load config", "error", err)
 			os.Exit(1)
 		}
-
+		retention, err := config.ParseDurationWithYears(cfg.Storage.RetentionTime)
+		if err != nil {
+			log.Error("Failed to parse request retention", "error", err)
+			os.Exit(1)
+		}
+		cleanupInterval, err := config.ParseDurationWithYears(cfg.Storage.CleanupInterval)
+		if err != nil {
+			log.Error("Failed to parse request cleanup interval", "error", err)
+			os.Exit(1)
+		}
+		go func() {
+			if err := storage.RequestCleaner(ctx, retention, cleanupInterval, reqDb_w); err != nil {
+				log.Error("Request cleanup stopped", "error", err)
+			}
+		}()
 		if cfg.Metrics.Enabled {
 			go func() {
 				if err := metrics.StartMetricsServer(cfg.Metrics.Port); err != nil {
@@ -71,7 +86,11 @@ var DaemonCmd = &cobra.Command{
 		}
 		var b blocker.BlockerEngine
 		fw := cfg.Firewall.Name
-		b = blocker.GetBlocker(fw, cfg.Firewall.Config)
+		b, err = blocker.GetBlocker(fw, cfg.Firewall.Config)
+		if err != nil {
+			log.Error("Failed to create firewall blocker", "error", err)
+			os.Exit(1)
+		}
 		err = b.Setup(cfg.Firewall.Config)
 		if err != nil {
 			log.Error("Failed to setup firewall", "error", err)
@@ -96,8 +115,22 @@ var DaemonCmd = &cobra.Command{
 		j := judge.New(banDb_r, banDb_w, reqDb_r, b, resultCh, entryCh)
 		j.LoadRules(r)
 		go j.UnbanChecker()
-		go j.Tribunal()
-		go storage.WriteReq(reqDb_w, resultCh)
+
+		var parserWg sync.WaitGroup
+		var tribunalWg sync.WaitGroup
+		var writerWg sync.WaitGroup
+
+		tribunalWg.Add(1)
+		go func() {
+			defer tribunalWg.Done()
+			j.Tribunal()
+		}()
+
+		writerWg.Add(1)
+		go func() {
+			defer writerWg.Done()
+			storage.WriteReq(reqDb_w, resultCh)
+		}()
 		var scanners []*parser.Scanner
 
 		for _, svc := range cfg.Service {
@@ -131,7 +164,9 @@ var DaemonCmd = &cobra.Command{
 
 				go pars.Start()
 
+				parserWg.Add(1)
 				go func(p *parser.Scanner, serviceName string) {
+					defer parserWg.Done()
 					if svc.Name == "nginx" {
 						log.Info("Starting nginx parser", "service", serviceName)
 						ng := parser.NewNginxParser()
@@ -162,7 +197,9 @@ var DaemonCmd = &cobra.Command{
 				scanners = append(scanners, pars)
 
 				go pars.Start()
+				parserWg.Add(1)
 				go func(p *parser.Scanner, serviceName string) {
+					defer parserWg.Done()
 					if svc.Name == "nginx" {
 						log.Info("Starting nginx parser", "service", serviceName)
 						ng := parser.NewNginxParser()
@@ -191,5 +228,19 @@ var DaemonCmd = &cobra.Command{
 		for _, s := range scanners {
 			s.Stop()
 		}
+
+		parserWg.Wait()
+		close(entryCh)
+		tribunalWg.Wait()
+		close(resultCh)
+		writerWg.Wait()
+
+		if err := reqDb_w.Close(); err != nil {
+			log.Error("Failed to close request writer database", "error", err)
+		}
+		if err := reqDb_r.Close(); err != nil {
+			log.Error("Failed to close request reader database", "error", err)
+		}
+		log.Info("BanForge daemon stopped")
 	},
 }

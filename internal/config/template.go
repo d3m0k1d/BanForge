@@ -2,7 +2,7 @@ package config
 
 const Base_config = `
 # This is a TOML config file for BanForge
-# [https://github.com/d3m0k1d/BanForge](https://github.com/d3m0k1d/BanForge)
+# https://github.com/d3m0k1d/BanForge
 
 [storage]
 retention_time = "2d"

@@ -32,7 +32,11 @@ var InitCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		b := blocker.GetBlocker(cfg.Firewall.Name, cfg.Firewall.Config)
+		b, err := blocker.GetBlocker(cfg.Firewall.Name, cfg.Firewall.Config)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		err = b.Setup(cfg.Firewall.Config)
 		if err != nil {
 			fmt.Println(err)

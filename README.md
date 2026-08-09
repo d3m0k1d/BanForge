@@ -14,7 +14,7 @@ Log-based IPS system written in Go for Linux-based system.
 
 # Overview
 BanForge is a simple IPS for replacement fail2ban in Linux system.
-All release not available now because i'm in the process of migrating repositories to my GitLab.
+Releases are published on the [GitHub release page](https://github.com/d3m0k1d/BanForge/releases).
 
 ## Roadmap
 - [x] Rule system
@@ -32,17 +32,15 @@ All release not available now because i'm in the process of migrating repositori
 - ufw/iptables/nftables/firewalld
 
 # Installation
-Releases are temporarily unavailable while the project is being migrated to GitLab and undergoing stabilization. Once a new stable version is ready, it will be published on GitHub.
 
 ## Installation guide for packages
-# All packages not available now
 ### Debian/Ubuntu(.deb)
 ```bash
 # Download the latest DEB package
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.deb
+wget https://github.com/d3m0k1d/BanForge/releases/download/v0.8.0-rc.1/banforge_0.8.0-rc.1_linux_amd64.deb
 
 # Install
-sudo dpkg -i banforge_0.6.0_linux_amd64.deb
+sudo dpkg -i banforge_0.8.0-rc.1_linux_amd64.deb
 
 # Verify installation
 sudo systemctl status banforge
@@ -52,13 +50,13 @@ sudo systemctl status banforge
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.rpm
+wget https://github.com/d3m0k1d/BanForge/releases/download/v0.8.0-rc.1/banforge_0.8.0-rc.1_linux_amd64.rpm
 
 # Install
-sudo rpm -i banforge_0.6.0_linux_amd64.rpm
+sudo rpm -i banforge_0.8.0-rc.1_linux_amd64.rpm
 
 # Or with dnf (CentOS 8+, AlmaLinux)
-sudo dnf install banforge_0.6.0_linux_amd64.rpm
+sudo dnf install banforge_0.8.0-rc.1_linux_amd64.rpm
 
 # Verify
 sudo systemctl status banforge
@@ -68,10 +66,10 @@ sudo systemctl status banforge
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.apk
+wget https://github.com/d3m0k1d/BanForge/releases/download/v0.8.0-rc.1/banforge_0.8.0-rc.1_linux_amd64.apk
 
 # Install
-sudo apk add --allow-untrusted banforge_0.6.0_linux_amd64.apk
+sudo apk add --allow-untrusted banforge_0.8.0-rc.1_linux_amd64.apk
 
 # Verify
 sudo rc-service banforge status
@@ -81,15 +79,15 @@ sudo rc-service banforge status
 ```bash
 
 # Download
-wget https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases/download/v0.6.0/banforge_0.6.0_linux_amd64.pkg.tar.zst
+wget https://github.com/d3m0k1d/BanForge/releases/download/v0.8.0-rc.1/banforge_0.8.0-rc.1_linux_amd64.pkg.tar.zst
 
 # Install
-sudo pacman -U banforge_0.6.0_linux_amd64.pkg.tar.zst
+sudo pacman -U banforge_0.8.0-rc.1_linux_amd64.pkg.tar.zst
 
 # Verify
 sudo systemctl status banforge
 ```
-This is examples for other versions with different architecture or new versions check release page on [Gitea](https://gitea.d3m0k1d.ru/d3m0k1d/BanForge/releases).
+This is examples for other versions with different architecture or new versions check the [GitHub release page](https://github.com/d3m0k1d/BanForge/releases).
 
 ## Installation guide for source code
 ```bash

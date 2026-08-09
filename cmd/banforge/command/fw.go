@@ -38,15 +38,15 @@ var UnbanCmd = &cobra.Command{
 				return err
 			}
 			fw := cfg.Firewall.Name
-			b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+			b, err := blocker.GetBlocker(fw, cfg.Firewall.Config)
+			if err != nil {
+				return err
+			}
 			if ip == "" {
 				return fmt.Errorf("IP can't be empty")
 			}
 			if net.ParseIP(ip) == nil {
 				return fmt.Errorf("invalid IP")
-			}
-			if err != nil {
-				return err
 			}
 			err = b.Unban(ip)
 			if err != nil {
@@ -87,15 +87,15 @@ var BanCmd = &cobra.Command{
 				return err
 			}
 			fw := cfg.Firewall.Name
-			b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+			b, err := blocker.GetBlocker(fw, cfg.Firewall.Config)
+			if err != nil {
+				return err
+			}
 			if ip == "" {
 				return fmt.Errorf("IP can't be empty")
 			}
 			if net.ParseIP(ip) == nil {
 				return fmt.Errorf("invalid IP")
-			}
-			if err != nil {
-				return err
 			}
 			err = b.Ban(ip)
 			if err != nil {
@@ -134,7 +134,11 @@ var PortOpenCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fw := cfg.Firewall.Name
-		b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		b, err := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		err = b.PortOpen(port, protocol)
 		if err != nil {
 			fmt.Println(err)
@@ -158,7 +162,11 @@ var PortCloseCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fw := cfg.Firewall.Name
-		b := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		b, err := blocker.GetBlocker(fw, cfg.Firewall.Config)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		err = b.PortClose(port, protocol)
 		if err != nil {
 			fmt.Println(err)

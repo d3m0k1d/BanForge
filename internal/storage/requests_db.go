@@ -52,6 +52,10 @@ func NewRequestsRd() (*RequestReader, error) {
 	}, nil
 }
 
+func (r *RequestReader) Close() error {
+	return r.db.Close()
+}
+
 func (r *RequestReader) IsMaxRetryExceeded(ip string, maxRetry int) (bool, error) {
 	var count int
 	if maxRetry == 0 {

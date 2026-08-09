@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/d3m0k1d/BanForge/internal/logger"
@@ -22,6 +23,8 @@ type Scanner struct {
 	scanner   *bufio.Scanner
 	ch        chan Event
 	stopCh    chan struct{}
+	doneCh    chan struct{}
+	stopOnce  sync.Once
 	logger    *logger.Logger
 	cmd       *exec.Cmd
 	file      *os.File
@@ -92,6 +95,7 @@ func NewScannerTail(path string) (*Scanner, error) {
 		scanner:   bufio.NewScanner(stdout),
 		ch:        make(chan Event, 100),
 		stopCh:    make(chan struct{}),
+		doneCh:    make(chan struct{}),
 		logger:    logger.New(false),
 		file:      nil,
 		cmd:       cmd,
@@ -119,6 +123,7 @@ func NewScannerJournald(unit string) (*Scanner, error) {
 		scanner:   bufio.NewScanner(stdout),
 		ch:        make(chan Event, 100),
 		stopCh:    make(chan struct{}),
+		doneCh:    make(chan struct{}),
 		logger:    logger.New(false),
 		cmd:       cmd,
 		file:      nil,
@@ -130,45 +135,47 @@ func (s *Scanner) Start() {
 	s.logger.Info("Scanner started")
 
 	go func() {
+		defer close(s.ch)
+		defer close(s.doneCh)
+
 		for {
 			select {
 			case <-s.stopCh:
 				s.logger.Info("Scanner stopped")
 				return
-
 			default:
-				if s.scanner.Scan() {
-					metrics.IncScannerEvent("scanner")
-					s.ch <- Event{
-						Data: s.scanner.Text(),
-					}
-					s.logger.Info("Scanner event", "data", s.scanner.Text())
-				} else {
-					if err := s.scanner.Err(); err != nil {
-						s.logger.Error("Scanner error")
-						metrics.IncError()
-						return
-					}
+			}
+
+			if !s.scanner.Scan() {
+				if err := s.scanner.Err(); err != nil {
+					s.logger.Error("Scanner error", "error", err)
+					metrics.IncError()
 				}
+				s.logger.Info("Scanner stopped: EOF")
+				return
+			}
+
+			metrics.IncScannerEvent("scanner")
+			s.ch <- Event{
+				Data: s.scanner.Text(),
 			}
 		}
 	}()
 }
 
 func (s *Scanner) Stop() {
-	close(s.stopCh)
+	s.stopOnce.Do(func() {
+		close(s.stopCh)
+	})
 
 	if s.cmd != nil && s.cmd.Process != nil {
 		s.logger.Info("Stopping process", "pid", s.cmd.Process.Pid)
-		err := s.cmd.Process.Kill()
-		if err != nil {
+		if err := s.cmd.Process.Kill(); err != nil {
 			s.logger.Error("Failed to kill process", "err", err)
 		}
-		err = s.cmd.Wait()
-		if err != nil {
-			s.logger.Error("Failed to wait process", "err", err)
+		if err := s.cmd.Wait(); err != nil {
+			s.logger.Debug("Scanner process exited", "err", err)
 		}
-
 	}
 
 	if s.file != nil {
@@ -176,8 +183,12 @@ func (s *Scanner) Stop() {
 			s.logger.Error("Failed to close file", "err", err)
 		}
 	}
-	time.Sleep(150 * time.Millisecond)
-	close(s.ch)
+
+	select {
+	case <-s.doneCh:
+	case <-time.After(2 * time.Second):
+		s.logger.Error("Timed out waiting for scanner goroutine to stop")
+	}
 }
 
 func (s *Scanner) Events() <-chan Event {

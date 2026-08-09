@@ -15,8 +15,9 @@ banforge init
 This command creates the necessary directories and base configuration files
 required for the daemon to operate:
 - `/etc/banforge/config.toml` — main configuration
-- `/etc/banforge/rules.toml` — default rules file
 - `/etc/banforge/rules.d/` — directory for individual rule files
+- `/var/lib/banforge/bans.db` — bans database
+- `/var/lib/banforge/requests.db` — requests database
 
 ---
 

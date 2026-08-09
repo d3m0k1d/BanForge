@@ -175,6 +175,37 @@ func TestScannerStop(t *testing.T) {
 		t.Error("Channel not closed after Stop()")
 	}
 }
+func TestScannerStopsOnProcessExit(t *testing.T) {
+	file, err := os.CreateTemp("", "test-*.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filePath := file.Name()
+	file.Close()
+	defer os.Remove(filePath)
+
+	scanner, err := NewScannerTail(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scanner.Start()
+	time.Sleep(100 * time.Millisecond)
+
+	if err := scanner.cmd.Process.Kill(); err != nil {
+		t.Fatalf("Failed to kill tail process: %v", err)
+	}
+
+	select {
+	case _, ok := <-scanner.Events():
+		if ok {
+			t.Error("Channel still open after process exit")
+		}
+	case <-time.After(1 * time.Second):
+		t.Error("Channel not closed after process exit")
+	}
+}
+
 func TestMultipleScanners(t *testing.T) {
 
 	file1, err := os.CreateTemp("", "test1-*.log")

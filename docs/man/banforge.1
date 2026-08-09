@@ -1,4 +1,4 @@
-.TH BANFORGE 1 "24 February 2026" "BanForge 1.0"
+.TH BANFORGE 1 "9 August 2026" "BanForge 0.8.0"
 .
 .SH NAME
 banforge \- BanForge IPS utility for Linux
@@ -32,9 +32,11 @@ Creates the necessary directories and base configuration files:
 .IP \(bu 2
 \fI/etc/banforge/config.toml\fR \- main configuration
 .IP \(bu 2
-\fI/etc/banforge/rules.toml\fR \- default rules file
-.IP \(bu 2
 \fI/etc/banforge/rules.d/\fR \- directory for individual rule files
+.IP \(bu 2
+\fI/var/lib/banforge/bans.db\fR \- bans database
+.IP \(bu 2
+\fI/var/lib/banforge/requests.db\fR \- requests database
 .RE
 .
 .SS version \- Display BanForge version
@@ -209,8 +211,6 @@ Configuration files are stored in \fI/etc/banforge/\fR:
 .RS
 .IP \(bu 2
 \fIconfig.toml\fR \- main daemon configuration
-.IP \(bu 2
-\fIrules.toml\fR \- default rules
 .IP \(bu 2
 \fIrules.d/*.toml\fR \- individual rule files
 .RE
